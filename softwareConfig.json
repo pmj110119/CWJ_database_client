@@ -1,0 +1,49 @@
+{
+  "ip":"localhost",
+  "username":"root",
+  "password":"751224",
+  "database":"test",
+  "table":"mice_cell_info_table",
+
+  "select":[
+    "id",
+    "tACQ",
+    "tEXP",
+    "typeEXP",
+    "numMICE",
+    "typeMICE",
+    "numCELLBODY",
+    "ONOFFlabel"
+    
+  ],
+  "show":[
+    "id",
+    "tACQ",
+    "tEXP",
+    "typeEXP",
+    "numMICE",
+    "typeMICE",
+    "miceventVECTOR",
+    "numCELLBODY",
+    "locationCELLBODY",
+    "primaryCaSIGNAL",
+    "deltaF/F",
+    "ONOFFlabel",
+    "EventResponseCurve_Start",
+    "EventResponseAmpl_Start",
+    "EventResponseCurve_End",
+    "EventResponseAmpl_End",
+    "signal_event_correlation",
+    "ConnectStrength_INevent",
+    "ConnectStrength_OUTevent",
+    "Degree_INevent",
+    "Degree_OUTevent",
+    "Degree_Change",
+    "Clustering_Coefficient_NegativeWeight",
+    "Clustering_Coefficient_PositiveWeight"
+
+  ]
+    
+
+  
+}

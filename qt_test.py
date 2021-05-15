@@ -1,0 +1,154 @@
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import uic
+from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+import pandas as pd
+import numpy as np
+import pymysql
+import json
+from os import system
+
+class GUI(QMainWindow):
+
+    def __init__(self):
+        super(GUI, self).__init__()  # 调用父类的构造函数
+        self.mysqlSelfInspection()
+
+
+        uic.loadUi("status.ui", self)
+
+
+
+        self.buttonSearch.clicked.connect(self.search)  # 设置查询按钮的回调函数
+        self.buttonPlot.clicked.connect(self.plotWithMatlab)
+
+        self.comboBoxFigure.currentIndexChanged.connect(self.comboBoxFigureChange)
+
+
+        self.data = []
+
+        # 表的初始化/显示表头
+        table = self.loadJson("softwareConfig.json")
+        self.table_select = table['select']
+        self.table_show = table['show']
+        self.tableShow.setColumnCount(len(self.table_show))
+        self.tableShow.setHorizontalHeaderLabels(self.table_show)
+        for i, column in enumerate(self.table_select):
+            data = {}
+
+            line = QLineEdit()
+            line.setObjectName(u'line_' + column)  # 设置name
+            line.setFont(QFont("Roman times", 12, QFont.Bold))
+
+            label = QLabel()
+            label.setText(column)
+            label.setFont(QFont("Roman times", 12, QFont.Bold))
+            label.setObjectName(u'label_' + column)
+            self.gridInput.addWidget(label, 2 * (i % 4), 2 * (i // 4) + 0)
+            self.gridInput.addWidget(line, 2 * (i % 4) + 1, 2 * (i // 4) + 0)
+
+            data['name'] = column
+            data['widget'] = line
+            self.data.append(data)
+
+        self.figureType = self.comboBoxFigure.currentText()
+  
+    def loadJson(self, jsonPath):
+        with open(jsonPath, 'r') as f:
+            data = json.load(f)
+            return data
+ 
+    # 连接数据库
+    def mysqlSelfInspection(self):
+        print("正在连接数据库...")
+        try:
+            result = self.loadJson("softwareConfig.json")
+            ip = result["ip"]
+            username = result["username"]
+            password = result["password"]
+            database = result["database"]
+            self.table_name = result["table"]
+            conn = pymysql.connect(host=ip,
+                                   user=username,
+                                   password=password,
+                                   database=database,
+                                   port=3306)
+
+            self.cursor = conn.cursor()
+            print("success")
+        except Exception as e:
+            print(e)
+            print("数据库连接失败!")
+
+    # 查询按钮回调函数
+    def search(self):
+        # 清空表单
+        self.tableShow.clearContents()
+        self.tableShow.setRowCount(0)
+        # 生成sql语句并提取执行结果
+        sql = self.sqlGenerate()
+        self.cursor.execute(sql)
+        ret = np.array(self.cursor.fetchall())
+        # 显示在表格控件中
+        for data in ret:
+            self.tableShow.insertRow(0)
+            for j in range(len(data)):
+                item_value = str(data[j])
+                newItem = QTableWidgetItem(item_value)
+                self.tableShow.setItem(0, j, newItem)
+    
+    # 图片类型选择回调函数
+    def comboBoxFigureChange(self):
+        self.figureType = self.comboBoxFigure.currentText()
+       
+    # 生成命令行调用matlab的指令
+    def shellCommand(self,type):
+        command = {
+            'AveFlow' :     'matlab AveFlow.m',
+            'CellMap' :     'matlab CellMap.m',
+            'DegreeTotal' : 'matlab DegreeTotal.m',
+            'PercentBar' :  'matlab PercentBar.m',
+            'PointCon' :    'matlab PointCon.m',
+            'RB2B' :        'matlab RB2B.m',
+            'ScatterCon' :  'matlab ScatterCon.m' 
+        }
+        return command.get(type,None)
+    
+    # 绘图按钮回调函数
+    def plotWithMatlab(self):
+        command = self.shellCommand(self.figureType)
+        print(command)
+        pass
+
+
+    # 生成sql指令
+    def sqlGenerate(self):
+
+        conditions = []
+        # 依次处理所有要判断的列
+        for data_ in self.data:
+            column_name = data_['name']
+            widget = data_['widget']
+            if (widget.text() != ''):
+                conditions.append(column_name + '=' + widget.text() + ' and ')  # name = value
+
+        base = "select * from " + self.table_name
+
+        # 如果某列不为空，则加到sql语句中
+        if (len(conditions) > 0):
+            base += ' where '
+            for condition in conditions:
+                base += condition
+            base = base[:-4]  # 去掉最后一个 'and'
+        print(base)
+        return base
+
+
+if __name__ == "__main__":
+    import sys
+
+    app = QtWidgets.QApplication(sys.argv)
+    gui = GUI()
+    gui.show()
+    sys.exit(app.exec_())
