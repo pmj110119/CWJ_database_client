@@ -3,12 +3,11 @@ from PyQt5 import uic
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-import pandas as pd
 import numpy as np
 import pymysql
 import json
 from os import system
-
+from transfer_client import SocketTransferClient
 class GUI(QMainWindow):
 
     def __init__(self):
@@ -19,9 +18,8 @@ class GUI(QMainWindow):
         uic.loadUi("status.ui", self)
 
 
-
         self.buttonSearch.clicked.connect(self.search)  # 设置查询按钮的回调函数
-        self.buttonPlot.clicked.connect(self.plotWithMatlab)
+        self.buttonUpload.clicked.connect(self.uploadToServer)
 
         self.comboBoxFigure.currentIndexChanged.connect(self.comboBoxFigureChange)
 
@@ -45,17 +43,21 @@ class GUI(QMainWindow):
             label.setText(column)
             label.setFont(QFont("Roman times", 12, QFont.Bold))
             label.setObjectName(u'label_' + column)
-            self.gridInput.addWidget(label, 2 * (i % 4), 2 * (i // 4) + 0)
-            self.gridInput.addWidget(line, 2 * (i % 4) + 1, 2 * (i // 4) + 0)
+            self.tableSearch.addWidget(label, 2 * (i % 4), 2 * (i // 4) + 0)
+            self.tableSearch.addWidget(line, 2 * (i % 4) + 1, 2 * (i // 4) + 0)
 
             data['name'] = column
             data['widget'] = line
             self.data.append(data)
 
         self.figureType = self.comboBoxFigure.currentText()
-  
+
+
+        self.transfer = SocketTransferClient()
+
+
     def loadJson(self, jsonPath):
-        with open(jsonPath, 'r') as f:
+        with open(jsonPath, 'r',encoding='UTF-8') as f:
             data = json.load(f)
             return data
  
@@ -116,9 +118,10 @@ class GUI(QMainWindow):
         return command.get(type,None)
     
     # 绘图按钮回调函数
-    def plotWithMatlab(self):
-        command = self.shellCommand(self.figureType)
-        print(command)
+    def uploadToServer(self):
+        openfile = QFileDialog.getOpenFileName(self, '选择文件', '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
+        self.transfer.upload(openfile)
+
         pass
 
 
@@ -131,7 +134,7 @@ class GUI(QMainWindow):
             column_name = data_['name']
             widget = data_['widget']
             if (widget.text() != ''):
-                conditions.append(column_name + '=' + widget.text() + ' and ')  # name = value
+                conditions.append(column_name + "='" + widget.text() + "' and ")  # name = value
 
         base = "select * from " + self.table_name
 
