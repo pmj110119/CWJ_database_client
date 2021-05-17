@@ -10,6 +10,7 @@ import pymysql
 import json
 from os import system
 from transfer_client import SocketTransferClient
+from lib.sql_type_check import checkType
 import time
 
 from data_upload import GUI_upload
@@ -33,9 +34,15 @@ class GUI(QMainWindow):
         # 表的初始化/设置表头
         keys = self.loadJson("softwareConfig.json")
         self.keys_search = keys['search']
-        self.keys_show = keys['show']
-        self.tableShow.setColumnCount(len(self.keys_show))  
-        self.tableShow.setHorizontalHeaderLabels(self.keys_show)
+    
+        self.keys_name = []
+        self.keys_type = {} # 储存对应key的数据类型
+        for data in keys['show']:
+            self.keys_name.append(data[0])
+            self.keys_type[data[0]] = data[1]   
+        
+        self.tableShow.setColumnCount(len(self.keys_name))  
+        self.tableShow.setHorizontalHeaderLabels(self.keys_name)
 
         # 动态生成search表
         for i, column in enumerate(self.keys_search):
@@ -78,13 +85,13 @@ class GUI(QMainWindow):
             password = result["password"]
             database = result["database"]
             self.table_name = result["table"]
-            conn = pymysql.connect(host=ip,
+            self.conn = pymysql.connect(host=ip,
                                    user=username,
                                    password=password,
                                    database=database,
                                    port=port)
 
-            self.cursor = conn.cursor()
+            self.cursor = self.conn.cursor()
             self.log("success")
         except Exception as e:
             self.log('报错：'+e)
@@ -118,6 +125,9 @@ class GUI(QMainWindow):
         
         # 生成sql语句并提取执行结果
         sql = self.sqlGenerate_insert()
+        if sql:
+            self.cursor.execute(sql)
+            self.conn.commit()
         # openfile = QFileDialog.getOpenFileName(self, '选择文件', '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
  
         #self.transfer.upload(openfile)
@@ -137,6 +147,11 @@ class GUI(QMainWindow):
             column_name = data_['name']
             widget = data_['widget']
             if (widget.text() != ''):
+                if not checkType(widget.text(),self.keys_type[column_name]):
+                    self.log('格式出错，已将错误内容清空，请重新填写')
+                    widget.setText('')
+                    continue
+                #print(column_name,self.keys_type[column_name])
                 conditions.append(column_name + "='" + widget.text() + "' and ")  # name = value
         base = "select * from " + self.table_name
         # 如果某列不为空，则加到sql语句中
@@ -159,6 +174,10 @@ class GUI(QMainWindow):
             widget = data_['widget']
             # 若某字段内容不为空，则记录其信息
             if (widget.text() != ''):
+                if not checkType(widget.text(),self.keys_type[column_name]):
+                    self.log('格式出错，已将错误内容清空，请重新填写')
+                    widget.setText('')
+                    continue
                 keys.append(column_name + ",")  # name = value
                 values.append('\''+widget.text() + "\',")  # name = value
         
@@ -175,6 +194,8 @@ class GUI(QMainWindow):
                 values_str += value
             keys_str = keys_str[:-1]+')'
             values_str = values_str[:-1]+')'
+        else:
+            return None
         base = base + keys_str + values_str + ';'
         print(base)
         return base
