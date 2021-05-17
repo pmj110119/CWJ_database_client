@@ -4,12 +4,12 @@
   "port":"18486",
   "password":"jrk.com",
   "database":"test",
-  "table":"experimentdata",
+  "table":"experimentdata_save",
 
 
 
 
-  "select":[
+  "search":[
     "datadescribe",
     "experimentdata",
     "dataformat",

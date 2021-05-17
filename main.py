@@ -4,6 +4,7 @@ from PyQt5 import uic
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+import qdarkstyle
 import numpy as np
 import pymysql
 import json
@@ -29,19 +30,21 @@ class GUI(QMainWindow):
 
         self.data = []
 
-        # 表的初始化/显示表头
-        table = self.loadJson("softwareConfig.json")
-        self.table_select = table['select']
-        self.table_show = table['show']
-        self.tableShow.setColumnCount(len(self.table_show))
-        self.tableShow.setHorizontalHeaderLabels(self.table_show)
-        for i, column in enumerate(self.table_select):
-            data = {}
+        # 表的初始化/设置表头
+        keys = self.loadJson("softwareConfig.json")
+        self.keys_search = keys['search']
+        self.keys_show = keys['show']
+        self.tableShow.setColumnCount(len(self.keys_show))  
+        self.tableShow.setHorizontalHeaderLabels(self.keys_show)
 
+        # 动态生成search表
+        for i, column in enumerate(self.keys_search):
+            data = {}
+            # 用于信息输入的文本框
             line = QLineEdit()
             line.setObjectName(u'line_' + column)  # 设置name
             line.setFont(QFont("Roman times", 12, QFont.Bold))
-
+            # 显示字段名的label
             label = QLabel()
             label.setText(column)
             label.setFont(QFont("Roman times", 12, QFont.Bold))
@@ -63,10 +66,9 @@ class GUI(QMainWindow):
         with open(jsonPath, 'r',encoding='UTF-8') as f:
             data = json.load(f)
             return data
- 
+    
     # 连接数据库
     def mysqlSelfInspection(self):
-
         self.log('正在连接数据库...')
         try:
             result = self.loadJson("softwareConfig.json")
@@ -110,10 +112,12 @@ class GUI(QMainWindow):
 
     # 绘图按钮回调函数
     def uploadToServer(self):
-        self.gui_upload = GUI_upload()
-        self.gui_upload.show()
-        self.gui_upload.buttonUpload.clicked.connect(self.uploadSqlGenerator)  # 设置查询按钮的回调函数
+        # self.gui_upload = GUI_upload()
+        # self.gui_upload.show()
+        # self.gui_upload.buttonUpload.clicked.connect(self.uploadSqlGenerator)  # 设置查询按钮的回调函数
         
+        # 生成sql语句并提取执行结果
+        sql = self.sqlGenerate_insert()
         # openfile = QFileDialog.getOpenFileName(self, '选择文件', '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
  
         #self.transfer.upload(openfile)
@@ -144,25 +148,39 @@ class GUI(QMainWindow):
         print(base)
         return base
 
-        # 生成sql指令
+
     
     def sqlGenerate_insert(self):
-        conditions = []
-        # 依次处理所有要判断的列
+        keys = []   
+        values = []
+        # 依次处理所有要判断的字段
         for data_ in self.data:
             column_name = data_['name']
             widget = data_['widget']
+            # 若某字段内容不为空，则记录其信息
             if (widget.text() != ''):
-                conditions.append(column_name + "='" + widget.text() + "' and ")  # name = value
-        base = "select * from " + self.table_name
-        # 如果某列不为空，则加到sql语句中
-        if (len(conditions) > 0):
-            base += ' where '
-            for condition in conditions:
-                base += condition
-            base = base[:-4]  # 去掉最后一个 'and'
+                keys.append(column_name + ",")  # name = value
+                values.append('\''+widget.text() + "\',")  # name = value
+        
+        
+        base = "INSERT INTO " + self.table_name
+
+        
+
+        keys_str = "("
+        values_str = " values ("
+        if (len(keys) > 0):
+            for key,value in zip(keys,values):
+                keys_str += key
+                values_str += value
+            keys_str = keys_str[:-1]+')'
+            values_str = values_str[:-1]+')'
+        base = base + keys_str + values_str + ';'
         print(base)
         return base
+
+
+
 
     def sqlGenerate_delete(self):
         base = "select * from " + self.table_name
@@ -183,6 +201,10 @@ if __name__ == "__main__":
     import sys
 
     app = QtWidgets.QApplication(sys.argv)
+    stylesheet = qdarkstyle.load_stylesheet_pyqt5()
+    app.setFont(QFont("微软雅黑", 9))
+    app.setWindowIcon(QIcon("icon.ico"))
+    app.setStyleSheet(stylesheet)
     gui = GUI()
     gui.show()
     sys.exit(app.exec_())

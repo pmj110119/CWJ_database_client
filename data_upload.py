@@ -20,7 +20,7 @@ class GUI_upload(QMainWindow):
 
         # 表的初始化/显示表头
         table = self.loadJson("softwareConfig.json")
-        self.table_select = table['select']
+        self.table_select = table['search']
 
         for i, column in enumerate(self.table_select):
             data = {}
