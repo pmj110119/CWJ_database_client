@@ -1,3 +1,4 @@
+#coding:utf-8
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5 import uic
 from PyQt5.QtGui import QIcon, QFont
@@ -8,20 +9,22 @@ import pymysql
 import json
 from os import system
 from transfer_client import SocketTransferClient
+import time
+
+from data_upload import GUI_upload
 class GUI(QMainWindow):
 
     def __init__(self):
         super(GUI, self).__init__()  # 调用父类的构造函数
+        
+        uic.loadUi("./assets/main.ui", self)
+
         self.mysqlSelfInspection()
-
-
-        uic.loadUi("status.ui", self)
-
 
         self.buttonSearch.clicked.connect(self.search)  # 设置查询按钮的回调函数
         self.buttonUpload.clicked.connect(self.uploadToServer)
 
-        self.comboBoxFigure.currentIndexChanged.connect(self.comboBoxFigureChange)
+        
 
 
         self.data = []
@@ -50,10 +53,10 @@ class GUI(QMainWindow):
             data['widget'] = line
             self.data.append(data)
 
-        self.figureType = self.comboBoxFigure.currentText()
 
 
-        self.transfer = SocketTransferClient()
+
+        #self.transfer = SocketTransferClient()
 
 
     def loadJson(self, jsonPath):
@@ -63,10 +66,12 @@ class GUI(QMainWindow):
  
     # 连接数据库
     def mysqlSelfInspection(self):
-        print("正在连接数据库...")
+
+        self.log('正在连接数据库...')
         try:
             result = self.loadJson("softwareConfig.json")
             ip = result["ip"]
+            port = int(result["port"])
             username = result["username"]
             password = result["password"]
             database = result["database"]
@@ -75,13 +80,13 @@ class GUI(QMainWindow):
                                    user=username,
                                    password=password,
                                    database=database,
-                                   port=3306)
+                                   port=port)
 
             self.cursor = conn.cursor()
-            print("success")
+            self.log("success")
         except Exception as e:
-            print(e)
-            print("数据库连接失败!")
+            self.log('报错：'+e)
+            self.log("数据库连接失败!")
 
     # 查询按钮回调函数
     def search(self):
@@ -89,7 +94,7 @@ class GUI(QMainWindow):
         self.tableShow.clearContents()
         self.tableShow.setRowCount(0)
         # 生成sql语句并提取执行结果
-        sql = self.sqlGenerate()
+        sql = self.sqlGenerate_search()
         self.cursor.execute(sql)
         ret = np.array(self.cursor.fetchall())
         # 显示在表格控件中
@@ -100,34 +105,28 @@ class GUI(QMainWindow):
                 newItem = QTableWidgetItem(item_value)
                 self.tableShow.setItem(0, j, newItem)
     
-    # 图片类型选择回调函数
-    def comboBoxFigureChange(self):
-        self.figureType = self.comboBoxFigure.currentText()
+
        
-    # 生成命令行调用matlab的指令
-    def shellCommand(self,type):
-        command = {
-            'AveFlow' :     'matlab AveFlow.m',
-            'CellMap' :     'matlab CellMap.m',
-            'DegreeTotal' : 'matlab DegreeTotal.m',
-            'PercentBar' :  'matlab PercentBar.m',
-            'PointCon' :    'matlab PointCon.m',
-            'RB2B' :        'matlab RB2B.m',
-            'ScatterCon' :  'matlab ScatterCon.m' 
-        }
-        return command.get(type,None)
-    
+
     # 绘图按钮回调函数
     def uploadToServer(self):
-        openfile = QFileDialog.getOpenFileName(self, '选择文件', '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
-        self.transfer.upload(openfile)
+        self.gui_upload = GUI_upload()
+        self.gui_upload.show()
+        self.gui_upload.buttonUpload.clicked.connect(self.uploadSqlGenerator)  # 设置查询按钮的回调函数
+        
+        # openfile = QFileDialog.getOpenFileName(self, '选择文件', '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
+ 
+        #self.transfer.upload(openfile)
 
         pass
+    
+    def uploadSqlGenerator(self):
+        self.log('进upload喽！')
+
 
 
     # 生成sql指令
-    def sqlGenerate(self):
-
+    def sqlGenerate_search(self):
         conditions = []
         # 依次处理所有要判断的列
         for data_ in self.data:
@@ -135,9 +134,7 @@ class GUI(QMainWindow):
             widget = data_['widget']
             if (widget.text() != ''):
                 conditions.append(column_name + "='" + widget.text() + "' and ")  # name = value
-
         base = "select * from " + self.table_name
-
         # 如果某列不为空，则加到sql语句中
         if (len(conditions) > 0):
             base += ' where '
@@ -147,6 +144,40 @@ class GUI(QMainWindow):
         print(base)
         return base
 
+        # 生成sql指令
+    
+    def sqlGenerate_insert(self):
+        conditions = []
+        # 依次处理所有要判断的列
+        for data_ in self.data:
+            column_name = data_['name']
+            widget = data_['widget']
+            if (widget.text() != ''):
+                conditions.append(column_name + "='" + widget.text() + "' and ")  # name = value
+        base = "select * from " + self.table_name
+        # 如果某列不为空，则加到sql语句中
+        if (len(conditions) > 0):
+            base += ' where '
+            for condition in conditions:
+                base += condition
+            base = base[:-4]  # 去掉最后一个 'and'
+        print(base)
+        return base
+
+    def sqlGenerate_delete(self):
+        base = "select * from " + self.table_name
+        print(base)
+        return base
+
+
+
+    def log(self,text):
+        #print(time.strftime("[%H:%M:%S]  ")+text,time.localtime())
+        #self.logBrowser.append(time.strftime("[%H:%M:%S]  "+text,time.localtime()))
+        self.logBrowser.append(text)
+        self.logBrowser.ensureCursorVisible()
+
+
 
 if __name__ == "__main__":
     import sys
@@ -155,3 +186,31 @@ if __name__ == "__main__":
     gui = GUI()
     gui.show()
     sys.exit(app.exec_())
+
+
+
+
+
+
+
+
+
+
+# "序号",
+# "数据格式",
+#   // "数据类型",
+#   // "拍摄日期",
+#   // "样本来源医院",
+#   // "样本编号",
+#   // "拍摄位置描述",
+#   // "样本动物种类",
+#   // "样本处理方式",
+#   // "疾病名称",
+#   // "疾病分型",
+#   // "激发波长",
+#   // "物镜下功率",
+#   // "滤光片参数",
+#   // "成像视场",
+#   // "单个位置拍摄数",
+#   // "z轴间隔",
+#   // "拼接大小"

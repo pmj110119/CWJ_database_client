@@ -7,11 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>882</width>
-    <height>820</height>
+    <height>635</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>数据库录入</string>
+  </property>
+  <property name="toolTipDuration">
+   <number>0</number>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -23,7 +26,7 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_3" stretch="2,1,4">
+      <layout class="QVBoxLayout" name="verticalLayout_3" stretch="2,1">
        <item>
         <layout class="QGridLayout" name="tableSearch"/>
        </item>
@@ -35,19 +38,7 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,1,1,1">
-          <item>
-           <widget class="QPushButton" name="buttonSearch">
-            <property name="font">
-             <font>
-              <pointsize>15</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>搜索</string>
-            </property>
-           </widget>
-          </item>
+         <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,1,1">
           <item>
            <spacer name="horizontalSpacer">
             <property name="orientation">
@@ -60,54 +51,6 @@
              </size>
             </property>
            </spacer>
-          </item>
-          <item>
-           <widget class="QComboBox" name="comboBoxFigure">
-            <property name="font">
-             <font>
-              <pointsize>15</pointsize>
-              <kerning>true</kerning>
-             </font>
-            </property>
-            <property name="focusPolicy">
-             <enum>Qt::WheelFocus</enum>
-            </property>
-            <item>
-             <property name="text">
-              <string>AveFlow</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>CellMap</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>DegreeTotal</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>PercentBar</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>PointCon</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>RB2B</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>ScatterCon</string>
-             </property>
-            </item>
-           </widget>
           </item>
           <item>
            <spacer name="horizontalSpacer_2">
@@ -130,21 +73,11 @@
              </font>
             </property>
             <property name="text">
-             <string>上传数据</string>
+             <string>录入</string>
             </property>
            </widget>
           </item>
          </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTableWidget" name="tableShow">
-         <property name="sizeIncrement">
-          <size>
-           <width>1</width>
-           <height>0</height>
-          </size>
-         </property>
         </widget>
        </item>
       </layout>

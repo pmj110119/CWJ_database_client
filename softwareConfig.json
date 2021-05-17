@@ -1,11 +1,35 @@
 {
-  "ip":"localhost",
+  "ip":"3d5732f187.zicp.vip",
   "username":"root",
-  "password":"751224",
+  "port":"18486",
+  "password":"jrk.com",
   "database":"test",
-  "table":"sample",
+  "table":"experimentdata",
+
+
+
 
   "select":[
+    "datadescribe",
+    "experimentdata",
+    "dataformat",
+    "datatype",
+    "samplehospital",
+    "sampleid",
+    "sampledescribe",
+    "sampletype",
+    "samplemethod",
+    "diseasename",
+    "diseasetype",
+    "wavelength",
+    "power",
+    "filter",
+    "fov",
+    "shootnum",
+    "zslice",
+    "matchsize"
+  ],
+  "select_chinese":[
     "数据类型",
     "拍摄日期",
     "样本来源医院",
@@ -20,28 +44,65 @@
     "成像视场"
     
   ],
+
+
   "show":[
-    "序号",
-    "数据格式",
-    "数据类型",
-    "拍摄日期",
-    "样本来源医院",
-    "样本编号",
-    "拍摄位置描述",
-    "样本动物种类",
-    "样本处理方式",
-    "疾病名称",
-    "疾病分型",
-    "激发波长",
-    "物镜下功率",
-    "滤光片参数",
-    "成像视场",
-    "单个位置拍摄数",
-    "z轴间隔",
-    "拼接大小"
+    "id",
+    "pid",
+    "datanum",
+    "dealtimes",
+    "uploader",
+    "uploadstartdate",
+    "uploadenddata",
+    "datadescribe",
+    "experimentdata",
+    "dataformat",
+    "datatype",
+    "samplehospital",
+    "sampleid",
+    "sampledescribe",
+    "sampletype",
+    "samplemethod",
+    "diseasename",
+    "diseasetype",
+    "wavelength",
+    "power",
+    "filter",
+    "fov",
+    "shootnum",
+    "zslice",
+    "matchsize"
+  ],
+  "show_chinese":[
+    "id",
+    "pid",
+    "datanum",
+    "dealtimes",
+    "uploader",
+    "uploadstartdate",
+    "uploadenddata",
+    "datadescribe",
+    "experimentdata",
+    "dataformat",
+    "datatype",
+    "samplehospital",
+    "sampleid",
+    "sampledescribe",
+    "sampletype",
+    "samplemethod",
+    "diseasename",
+    "diseasetype",
+    "wavelength",
+    "power",
+    "filter",
+    "fov",
+    "shootnum",
+    "zslice",
+    "matchsize"
 
   ]
-    
-
+ 
+ 
   
 }
+
