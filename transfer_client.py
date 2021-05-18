@@ -12,12 +12,16 @@ import os
 
 
 class SocketTransferClient():
-    def __init__(self, ip='127.0.0.1', port=8002):
+    def __init__(self, ip='3d5732f187.zicp.vip', port=18486):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((ip, port))
         print('socket连接成功！')
         line = self.sock.recv(1024)
-        print(line.decode())
+        print(line)
+        self.sock.send("jrk.com".encode())
+        line = self.sock.recv(1024)
+        print(line)
+        #print(line.decode())
 
     # 实现下载功能
     def download(self):

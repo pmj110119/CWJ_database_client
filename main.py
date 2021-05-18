@@ -28,7 +28,8 @@ class GUI(QMainWindow):
 
         self.buttonDelete.clicked.connect(self.deleteSql)  # 设置查询按钮的回调函数
         
-        
+
+        self.cellEventEnable(True)
 
         self.data = []
 
@@ -42,9 +43,10 @@ class GUI(QMainWindow):
             self.keys_name.append(data[0])
             self.keys_type[data[0]] = data[1]   
         
+        self.cellEventEnable(False)
         self.tableShow.setColumnCount(len(self.keys_name))  
         self.tableShow.setHorizontalHeaderLabels(self.keys_name)
-
+        self.cellEventEnable(True)
         # 动态生成search表
         for i, column in enumerate(self.keys_search):
             data = {}
@@ -67,7 +69,7 @@ class GUI(QMainWindow):
 
 
 
-        self.transfer = SocketTransferClient(ip=self.ip, port=self.port)
+        #self.transfer = SocketTransferClient(ip=self.ip, port=self.port)
 
 
     def loadJson(self, jsonPath):
@@ -101,6 +103,7 @@ class GUI(QMainWindow):
     # 查询按钮回调函数
     def search(self):
         # 清空表单
+        self.cellEventEnable(False)
         self.tableShow.clearContents()
         self.tableShow.setRowCount(0)
         # 生成sql语句并提取执行结果
@@ -115,7 +118,7 @@ class GUI(QMainWindow):
                 item_value = str(data[j])
                 newItem = QTableWidgetItem(item_value)
                 self.tableShow.setItem(0, j, newItem)
-    
+        self.cellEventEnable(True)
 
     def deleteSql(self):
         sql = self.sqlGenerate_delete()
@@ -240,6 +243,38 @@ class GUI(QMainWindow):
         base = base + str(id) + ';'
         return base
 
+    def cellEventEnable(self, flag):
+        if flag:
+            self.tableShow.cellChanged.connect(self.cellchange)
+        else:
+            self.tableShow.cellChanged.disconnect()
+   
+    def cellchange(self,row,col):
+        self.cursor.execute('select * from '+self.table_name)
+        ret = np.array(self.cursor.fetchall())
+
+        data = ret[-(row+1)]
+        data_id = str(data[0])
+        data_key = self.keys_name[col]
+        data_content = self.tableShow.item(row,col).text()
+        data_content_origin = str(data[col])
+
+        if not checkType(data_content,self.keys_type[data_key]):
+            self.log('[id-'+data_id+',key-'+data_key+']  不符合数据格式要求，修改失败')
+            self.cellEventEnable(False)
+            self.tableShow.item(row,col).setText(data_content_origin)
+            self.cellEventEnable(True)
+            return
+
+        base = "update " + self.table_name +' set '
+        sql = base + data_key+'=\''+data_content+'\' where id='+data_id+';'
+        print(sql)
+        self.cursor.execute(sql)
+        self.conn.commit()
+        self.log('id-'+data_id+': 修改成功')
+        #print(data_id,data_key,data_content)
+        #print(self.keys_name)
+       # self.settext('第%s行，第%s列 , 数据改变为:%s'%(row,col,txt))
 
 
     def log(self,text):
