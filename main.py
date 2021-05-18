@@ -26,8 +26,9 @@ class GUI(QMainWindow):
         self.buttonSearch.clicked.connect(self.search)  # 设置查询按钮的回调函数
         self.buttonUpload.clicked.connect(self.uploadToServer)
 
+        self.buttonDelete.clicked.connect(self.deleteSql)  # 设置查询按钮的回调函数
         
-
+        
 
         self.data = []
 
@@ -66,7 +67,7 @@ class GUI(QMainWindow):
 
 
 
-        #self.transfer = SocketTransferClient()
+        self.transfer = SocketTransferClient(ip=self.ip, port=self.port)
 
 
     def loadJson(self, jsonPath):
@@ -79,17 +80,17 @@ class GUI(QMainWindow):
         self.log('正在连接数据库...')
         try:
             result = self.loadJson("softwareConfig.json")
-            ip = result["ip"]
-            port = int(result["port"])
-            username = result["username"]
-            password = result["password"]
+            self.ip = result["ip"]
+            self.port = int(result["port"])
+            self.mysql_username = result["username"]
+            self.mysql_password = result["password"]
             database = result["database"]
             self.table_name = result["table"]
-            self.conn = pymysql.connect(host=ip,
-                                   user=username,
-                                   password=password,
+            self.conn = pymysql.connect(host=self.ip,
+                                   user=self.mysql_username,
+                                   password=self.mysql_password,
                                    database=database,
-                                   port=port)
+                                   port=self.port)
 
             self.cursor = self.conn.cursor()
             self.log("success")
@@ -108,6 +109,7 @@ class GUI(QMainWindow):
         ret = np.array(self.cursor.fetchall())
         # 显示在表格控件中
         for data in ret:
+            
             self.tableShow.insertRow(0)
             for j in range(len(data)):
                 item_value = str(data[j])
@@ -115,19 +117,19 @@ class GUI(QMainWindow):
                 self.tableShow.setItem(0, j, newItem)
     
 
-       
+    def deleteSql(self):
+        sql = self.sqlGenerate_delete()
+        self.cursor.execute(sql)
+        self.conn.commit()
+        self.search()
 
-    # 绘图按钮回调函数
+    # insert语句
     def uploadToServer(self):
-        # self.gui_upload = GUI_upload()
-        # self.gui_upload.show()
-        # self.gui_upload.buttonUpload.clicked.connect(self.uploadSqlGenerator)  # 设置查询按钮的回调函数
+        self.gui_upload = GUI_upload()
+        self.gui_upload.show()
+        self.gui_upload.buttonUpload.clicked.connect(self.uploadSqlGenerator)  # 设置查询按钮的回调函数
         
-        # 生成sql语句并提取执行结果
-        sql = self.sqlGenerate_insert()
-        if sql:
-            self.cursor.execute(sql)
-            self.conn.commit()
+        #self.search()
         # openfile = QFileDialog.getOpenFileName(self, '选择文件', '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
  
         #self.transfer.upload(openfile)
@@ -135,8 +137,15 @@ class GUI(QMainWindow):
         pass
     
     def uploadSqlGenerator(self):
-        self.log('进upload喽！')
-
+        #self.log('进upload喽！')
+        
+        # 生成sql语句并提取执行结果
+        sql = self.sqlGenerate_insert(self.gui_upload)
+        if sql:
+            self.cursor.execute(sql)
+            self.conn.commit()
+            self.log('-- 录入成功')
+            self.search()
 
 
     # 生成sql指令
@@ -148,7 +157,7 @@ class GUI(QMainWindow):
             widget = data_['widget']
             if (widget.text() != ''):
                 if not checkType(widget.text(),self.keys_type[column_name]):
-                    self.log('格式出错，已将错误内容清空，请重新填写')
+                    self.log('ERROR-- 检测到错误格式，已帮您清空错误内容，请重新输入')
                     widget.setText('')
                     continue
                 #print(column_name,self.keys_type[column_name])
@@ -165,23 +174,44 @@ class GUI(QMainWindow):
 
 
     
-    def sqlGenerate_insert(self):
-        keys = []   
+    def sqlGenerate_insert(self,gui):
+        # 插入数据工厂规范字段
+        ## pid       不变
+        ## datanum   自增1
+        ## dealtimes 不变
+        ## uploader  不变
+        keys = ['pid,','datanum,','dealtimes,','uploader,']   
         values = []
-        # 依次处理所有要判断的字段
-        for data_ in self.data:
+        self.cursor.execute('select * from '+self.table_name)
+        ret = np.array(self.cursor.fetchall())
+        last_data = ret[-1]
+        values.append('\''+str(last_data[1])+'\',')
+        values.append('\''+'d'+str(int(last_data[2][1:])+1).zfill(5)+'\',')
+        values.append('\''+str(last_data[3])+'\',')
+        values.append('\''+str(last_data[4])+'\',')
+  
+
+
+        # 依次处理所有要判断的字段（不包括上面的规范字段）
+        check_ok = True
+        for data_ in gui.data:
             column_name = data_['name']
             widget = data_['widget']
             # 若某字段内容不为空，则记录其信息
             if (widget.text() != ''):
                 if not checkType(widget.text(),self.keys_type[column_name]):
-                    self.log('格式出错，已将错误内容清空，请重新填写')
+                    check_ok = False
                     widget.setText('')
                     continue
                 keys.append(column_name + ",")  # name = value
                 values.append('\''+widget.text() + "\',")  # name = value
         
-        
+        if len(keys)<5:
+            self.log('ERROR-- 有效输入的字段数为0，请检查您的输入')
+            return None
+        if not check_ok:
+            self.log('ERROR-- 检测到错误格式，已帮您清空错误内容，请重新输入')
+            return None
         base = "INSERT INTO " + self.table_name
 
         
@@ -204,8 +234,10 @@ class GUI(QMainWindow):
 
 
     def sqlGenerate_delete(self):
-        base = "select * from " + self.table_name
-        print(base)
+        base = "delete from "+ self.table_name + ' where id = '
+        self.cursor.execute('select * from '+self.table_name)
+        id = np.array(self.cursor.fetchall())[-1][0]
+        base = base + str(id) + ';'
         return base
 
 

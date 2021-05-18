@@ -116,7 +116,7 @@ if __name__ == '__main__':
     os.chdir('files')
     # 建立socket链接，并监听8002端口
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 8002))
+    sock.bind(('', 18486))
     sock.listen(100)
     while True:
         connect, address = sock.accept()

@@ -12,10 +12,10 @@ import os
 
 
 class SocketTransferClient():
-    def __init__(self):
+    def __init__(self, ip='127.0.0.1', port=8002):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(('127.0.0.1', 8002))
-        print('Lianjie')
+        self.sock.connect((ip, port))
+        print('socket连接成功！')
         line = self.sock.recv(1024)
         print(line.decode())
 
