@@ -271,7 +271,7 @@ class GUI(QMainWindow):
         print(sql)
         self.cursor.execute(sql)
         self.conn.commit()
-        self.log('id-'+data_id+': 修改成功')
+        self.log('[id-'+data_id+',key-'+data_key+']  修改成功')
         #print(data_id,data_key,data_content)
         #print(self.keys_name)
        # self.settext('第%s行，第%s列 , 数据改变为:%s'%(row,col,txt))
