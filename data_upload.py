@@ -40,7 +40,9 @@ class GUI_upload(QMainWindow):
             data['widget'] = line
             self.data.append(data)
 
-
+    def openfile(self):
+        openfile = QFileDialog.getOpenFileName(self, '选择文件')[0]#, '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
+        return openfile
 
     
     def loadJson(self, jsonPath):

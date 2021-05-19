@@ -12,8 +12,13 @@ from os import system
 from transfer_client import SocketTransferClient
 from lib.sql_type_check import checkType
 import time
-
+import os
+import shutil
 from data_upload import GUI_upload
+
+SERVER = 0
+CLIENT = 1
+
 class GUI(QMainWindow):
 
     def __init__(self):
@@ -21,6 +26,7 @@ class GUI(QMainWindow):
         
         uic.loadUi("./assets/main.ui", self)
 
+        self.loadConfig()
         self.mysqlSelfInspection()
 
         self.buttonSearch.clicked.connect(self.search)  # 设置查询按钮的回调函数
@@ -66,10 +72,15 @@ class GUI(QMainWindow):
             data['widget'] = line
             self.data.append(data)
 
+        if self.ip=='localhost':
+            self.mode = SERVER
+        else:
+            self.mode = CLIENT
+        self.mode = SERVER      # 先强制为服务器版，解决socket端口映射问题后再改掉
 
 
-
-        #self.transfer = SocketTransferClient(ip=self.ip, port=self.port)
+        if self.mode == CLIENT:     # 客户端需要和服务器进行socket通信
+            self.transfer = SocketTransferClient(ip=self.ip, port=self.port)
 
 
     def loadJson(self, jsonPath):
@@ -77,21 +88,27 @@ class GUI(QMainWindow):
             data = json.load(f)
             return data
     
+
+    def loadConfig(self):
+        result = self.loadJson("softwareConfig.json")
+        self.project_id = result["project_id"]
+        self.data_root = './data/' + self.project_id
+        self.ip = result["ip"]
+        self.port = int(result["port"])
+        self.mysql_username = result["username"]
+        self.mysql_password = result["password"]
+        self.database = result["database"]
+        self.table_name = result["table"]
+
+
     # 连接数据库
     def mysqlSelfInspection(self):
         self.log('正在连接数据库...')
         try:
-            result = self.loadJson("softwareConfig.json")
-            self.ip = result["ip"]
-            self.port = int(result["port"])
-            self.mysql_username = result["username"]
-            self.mysql_password = result["password"]
-            database = result["database"]
-            self.table_name = result["table"]
             self.conn = pymysql.connect(host=self.ip,
                                    user=self.mysql_username,
                                    password=self.mysql_password,
-                                   database=database,
+                                   database=self.database,
                                    port=self.port)
 
             self.cursor = self.conn.cursor()
@@ -120,36 +137,67 @@ class GUI(QMainWindow):
                 self.tableShow.setItem(0, j, newItem)
         self.cellEventEnable(True)
 
+
+
     def deleteSql(self):
-        sql = self.sqlGenerate_delete()
+        sql, datanum = self.sqlGenerate_delete()
         self.cursor.execute(sql)
         self.conn.commit()
         self.search()
+
+        
+        target_folder = os.path.join(self.data_root,datanum) 
+        print(target_folder)
+        if os.path.exists(target_folder):
+            shutil.rmtree(target_folder)
+
+    ## 文件夹弹窗    
+    #os.startfile(path)
+
 
     # insert语句
     def uploadToServer(self):
         self.gui_upload = GUI_upload()
         self.gui_upload.show()
         self.gui_upload.buttonUpload.clicked.connect(self.uploadSqlGenerator)  # 设置查询按钮的回调函数
+        self.gui_upload.buttonSelect.clicked.connect(self.uploadSelectFiles)
+                #self.search()
         
-        #self.search()
-        # openfile = QFileDialog.getOpenFileName(self, '选择文件', '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
- 
-        #self.transfer.upload(openfile)
-
         pass
     
-    def uploadSqlGenerator(self):
-        #self.log('进upload喽！')
-        
-        # 生成sql语句并提取执行结果
-        sql = self.sqlGenerate_insert(self.gui_upload)
-        if sql:
-            self.cursor.execute(sql)
-            self.conn.commit()
-            self.log('-- 录入成功')
-            self.search()
+    def uploadSelectFiles(self):
+        openfile = self.gui_upload.openfile()
+        #openfile = QFileDialog.getOpenFileName(self, '选择文件')[0]#, '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
+        #for file in openfiles:
+        self.gui_upload.listSelectFiles.addItem(openfile)   # 将此文件添加到列表中
+        #self.allFiles.itemClicked.connect(self.itemClick)   #列表框关联时间，用信号槽的写法方式不起作用
 
+    def uploadSqlGenerator(self):
+        # 生成sql语句并提取执行结果
+        sql, datanum = self.sqlGenerate_insert(self.gui_upload)
+        if not sql:
+            return
+   
+        self.cursor.execute(sql)
+        self.conn.commit()
+        self.log('-- 录入成功')
+        self.search()
+
+        
+        # 生成对应文件夹
+        target_folder = os.path.join(self.data_root,datanum)
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
+
+        
+        # 将所选文件依次复制到目标路径下
+        for i in range(self.gui_upload.listSelectFiles.count()):
+            file = self.gui_upload.listSelectFiles.item(i).text()
+            # 根据软件模式选择文件传输方式
+            if self.mode == CLIENT:
+                self.transfer.upload(file)
+            else:
+                shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
 
     # 生成sql指令
     def sqlGenerate_search(self):
@@ -193,7 +241,7 @@ class GUI(QMainWindow):
         values.append('\''+str(last_data[3])+'\',')
         values.append('\''+str(last_data[4])+'\',')
   
-
+        datanum = 'd'+str(int(last_data[2][1:])+1).zfill(5)
 
         # 依次处理所有要判断的字段（不包括上面的规范字段）
         check_ok = True
@@ -209,12 +257,13 @@ class GUI(QMainWindow):
                 keys.append(column_name + ",")  # name = value
                 values.append('\''+widget.text() + "\',")  # name = value
         
+        # 校验
         if len(keys)<5:
             self.log('ERROR-- 有效输入的字段数为0，请检查您的输入')
-            return None
+            return None,None
         if not check_ok:
             self.log('ERROR-- 检测到错误格式，已帮您清空错误内容，请重新输入')
-            return None
+            return None,None
         base = "INSERT INTO " + self.table_name
 
         
@@ -228,10 +277,10 @@ class GUI(QMainWindow):
             keys_str = keys_str[:-1]+')'
             values_str = values_str[:-1]+')'
         else:
-            return None
+            return None,None
         base = base + keys_str + values_str + ';'
         print(base)
-        return base
+        return base,datanum
 
 
 
@@ -239,9 +288,11 @@ class GUI(QMainWindow):
     def sqlGenerate_delete(self):
         base = "delete from "+ self.table_name + ' where id = '
         self.cursor.execute('select * from '+self.table_name)
-        id = np.array(self.cursor.fetchall())[-1][0]
+        ret = np.array(self.cursor.fetchall())
+        id = ret[-1][0]
+        datanum = ret[-1][2]
         base = base + str(id) + ';'
-        return base
+        return base, datanum
 
     def cellEventEnable(self, flag):
         if flag:

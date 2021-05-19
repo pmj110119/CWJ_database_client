@@ -1,4 +1,12 @@
 /__pycache__/
-*.jpg
-*.log
 /.idea/
+data
+build
+dist
+release
+*.spec
+*.rar
+*.txt
+*.exe
+*.log
+*.jpg
