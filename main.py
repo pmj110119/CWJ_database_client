@@ -119,6 +119,8 @@ class GUI(QMainWindow):
 
     # 查询按钮回调函数
     def search(self):
+    
+
         # 清空表单
         self.cellEventEnable(False)
         self.tableShow.clearContents()
@@ -137,10 +139,23 @@ class GUI(QMainWindow):
                 self.tableShow.setItem(0, j, newItem)
         self.cellEventEnable(True)
 
+        
 
 
     def deleteSql(self):
-        sql, datanum = self.sqlGenerate_delete()
+        selected_items = self.tableShow.selectedItems()
+        if len(selected_items)==0:
+            return
+        row = selected_items[0].row() 
+        id = self.tableShow.item(row,0).text()
+        datanum = self.tableShow.item(row,2).text()
+
+        reply = QMessageBox.question(self, '确认', '是否确认删除\''+datanum+'\'这条数据？',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.No:
+            return
+
+        sql = self.sqlGenerate_delete(id)
         self.cursor.execute(sql)
         self.conn.commit()
         self.search()
@@ -150,6 +165,9 @@ class GUI(QMainWindow):
         print(target_folder)
         if os.path.exists(target_folder):
             shutil.rmtree(target_folder)
+   
+        self.log('[id-'+id+']  数据已删除')
+        
 
     ## 文件夹弹窗    
     #os.startfile(path)
@@ -285,14 +303,10 @@ class GUI(QMainWindow):
 
 
 
-    def sqlGenerate_delete(self):
+    def sqlGenerate_delete(self, id):
         base = "delete from "+ self.table_name + ' where id = '
-        self.cursor.execute('select * from '+self.table_name)
-        ret = np.array(self.cursor.fetchall())
-        id = ret[-1][0]
-        datanum = ret[-1][2]
         base = base + str(id) + ';'
-        return base, datanum
+        return base
 
     def cellEventEnable(self, flag):
         if flag:
