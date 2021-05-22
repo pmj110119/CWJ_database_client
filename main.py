@@ -216,6 +216,8 @@ class GUI(QMainWindow):
                 self.transfer.upload(file)
             else:
                 shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
+        self.gui_upload.listSelectFiles.clear()
+
 
     # 生成sql指令
     def sqlGenerate_search(self):
