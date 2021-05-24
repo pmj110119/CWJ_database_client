@@ -1,115 +1,146 @@
 {
-  "project_id":"PM20210001",
-  "ip":"3d5732f187.zicp.vip",
-  "username":"root",
-  "port":"18486",
-  "password":"jrk.com",
-  "database":"test",
-  "table":"experimentdata_save",
-
-
-
-
-  "search":[
-    "datadescribe",
-    "experimentdate",
-    "dataformat",
-    "datatype",
-    "samplehospital",
-    "sampleid",
-    "sampledescribe",
-    "sampletype",
-    "samplemethod",
-    "diseasename",
-    "diseasetype",
-    "wavelength",
-    "power",
-    "filter",
-    "fov",
-    "shootnum",
-    "zslice",
-    "matchsize"
-  ],
-
-
-
-  "show":[
-    ["id", "int"],
-    ["pid", "int"],
-    ["datanum", "varchar"],
-    ["dealtimes", "int"],
-    ["uploader", "int"],
-    ["uploadstartdate", "datetime"],
-    ["uploadenddate", "datetime"],
-    ["datadescribe", "text"],
-    ["experimentdate", "datetime"],
-    ["dataformat", "varchar"],
-    ["datatype", "varchar"],
-    ["samplehospital", "varchar"],
-    ["sampleid", "varchar"],
-    ["sampledescribe", "varchar"],
-    ["sampletype", "varchar"],
-    ["samplemethod", "varchar"],
-    ["diseasename", "varchar"],
-    ["diseasetype", "datetime"],
-    ["wavelength", "int"],
-    ["power", "int"],
-    ["filter", "varchar"],
-    ["fov", "varchar"],
-    ["shootnum", "int"],
-    ["zslice", "varchar"],
-    ["matchsize", "varchar"]
-  ],
-
-
-
-  "select_chinese":[
-    "数据类型",
-    "拍摄日期",
-    "样本来源医院",
-    "样本编号",
-    "拍摄位置描述",
-    "样本动物种类",
-    "样本处理方式",
-    "疾病名称",
-    "疾病分型",
-    "激发波长",
-    "滤光片参数",
-    "成像视场"
-    
-  ],
-
-
-  "show_chinese":[
-    "id",
-    "pid",
-    "datanum",
-    "dealtimes",
-    "uploader",
-    "uploadstartdate",
-    "uploadenddata",
-    "datadescribe",
-    "experimentdate",
-    "dataformat",
-    "datatype",
-    "samplehospital",
-    "sampleid",
-    "sampledescribe",
-    "sampletype",
-    "samplemethod",
-    "diseasename",
-    "diseasetype",
-    "wavelength",
-    "power",
-    "filter",
-    "fov",
-    "shootnum",
-    "zslice",
-    "matchsize"
-
-  ]
- 
- 
-  
+    "project_id": "PM20210001",
+    "ip": "3d5732f187.zicp.vip",
+    "mysql_username": "root",
+    "mysql_port": 18486,
+    "mysql_password": "jrk.com",
+    "database": "test",
+    "table_name": "experimentdata_save",
+    "key_search": [
+        "datadescribe",
+        "experimentdate",
+        "dataformat",
+        "datatype",
+        "samplehospital",
+        "sampleid",
+        "sampledescribe",
+        "sampletype",
+        "samplemethod",
+        "diseasename",
+        "diseasetype",
+        "wavelength",
+        "power",
+        "filter",
+        "fov",
+        "shootnum",
+        "zslice",
+        "matchsize",
+        "test_key_1",
+        "test_key_2",
+        "test_key_3"
+    ],
+    "key_show": [
+        [
+            "id",
+            "int"
+        ],
+        [
+            "pid",
+            "int"
+        ],
+        [
+            "datanum",
+            "varchar"
+        ],
+        [
+            "dealtimes",
+            "int"
+        ],
+        [
+            "uploader",
+            "int"
+        ],
+        [
+            "uploadstartdate",
+            "datetime"
+        ],
+        [
+            "uploadenddate",
+            "datetime"
+        ],
+        [
+            "datadescribe",
+            "text"
+        ],
+        [
+            "experimentdate",
+            "datetime"
+        ],
+        [
+            "dataformat",
+            "varchar"
+        ],
+        [
+            "datatype",
+            "varchar"
+        ],
+        [
+            "samplehospital",
+            "varchar"
+        ],
+        [
+            "sampleid",
+            "varchar"
+        ],
+        [
+            "sampledescribe",
+            "varchar"
+        ],
+        [
+            "sampletype",
+            "varchar"
+        ],
+        [
+            "samplemethod",
+            "varchar"
+        ],
+        [
+            "diseasename",
+            "varchar"
+        ],
+        [
+            "diseasetype",
+            "datetime"
+        ],
+        [
+            "wavelength",
+            "int"
+        ],
+        [
+            "power",
+            "int"
+        ],
+        [
+            "filter",
+            "varchar"
+        ],
+        [
+            "fov",
+            "varchar"
+        ],
+        [
+            "shootnum",
+            "int"
+        ],
+        [
+            "zslice",
+            "varchar"
+        ],
+        [
+            "matchsize",
+            "varchar"
+        ],
+        [
+            "test_key_1",
+            "varchar"
+        ],
+        [
+            "test_key_2",
+            "varchar"
+        ],
+        [
+            "test_key_3",
+            "varchar"
+        ]
+    ]
 }
-
