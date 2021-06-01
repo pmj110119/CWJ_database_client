@@ -14,7 +14,7 @@ from lib.sql_type_check import checkType
 import time
 import os
 import shutil
-from data_upload import GUI_upload
+from data_upload import GUI_keyAdd, GUI_upload
 
 SERVER = 0
 CLIENT = 1
@@ -29,32 +29,69 @@ class GUI(QMainWindow):
         self.loadConfig()
         self.mysqlSelfInspection()
 
+        
+
+
         self.buttonSearch.clicked.connect(self.search)  # 设置查询按钮的回调函数
         self.buttonUpload.clicked.connect(self.uploadToServer)
-
         self.buttonDelete.clicked.connect(self.deleteSql)  # 设置查询按钮的回调函数
+        self.buttonKeyAdd.clicked.connect(self.addKeyToServer)  # 设置查询按钮的回调函数
+        self.buttonKeyDelete.clicked.connect(self.deleteKeyToServer)  # 设置查询按钮的回调函数
+
         
 
-        self.cellEventEnable(True)
 
-        self.data = []
 
-        # 表的初始化/设置表头
-        keys = self.loadJson("softwareConfig.json")
-        self.keys_search = keys['search']
+        if self.ip=='localhost':
+            self.mode = SERVER
+        else:
+            self.mode = CLIENT
+        self.mode = SERVER      # 先强制为服务器版，解决socket端口映射问题后再改掉
+
+
+        if self.mode == CLIENT:     # 客户端需要和服务器进行socket通信
+            self.transfer = SocketTransferClient(ip=self.ip, port=self.port)
+
+        self.search()
+    def loadJson(self, jsonPath):
+        with open(jsonPath, 'r',encoding='UTF-8') as f:
+            data = json.load(f)
+            return data
     
+
+    def loadConfig(self,name='softwareConfig'):
+        result = self.loadJson(name+'.json')
+        self.project_id = result["project_id"]
+        self.ip = result["ip"]
+        self.mysql_username = result["mysql_username"]
+        self.mysql_port = int(result["mysql_port"])
+        self.mysql_password = result["mysql_password"]
+        self.database = result["database"]
+        self.table_name = result["table_name"]
+        self.key_search = result["key_search"]
+        self.key_show = result["key_show"]
+
+        self.data_root = './data/' + self.project_id
+        
+
         self.keys_name = []
         self.keys_type = {} # 储存对应key的数据类型
-        for data in keys['show']:
+        for data in self.key_show:
             self.keys_name.append(data[0])
             self.keys_type[data[0]] = data[1]   
+
         
-        self.cellEventEnable(False)
+        # 表的初始化/设置表头
+        #self.cellEventEnable(False)
         self.tableShow.setColumnCount(len(self.keys_name))  
         self.tableShow.setHorizontalHeaderLabels(self.keys_name)
         self.cellEventEnable(True)
         # 动态生成search表
-        for i, column in enumerate(self.keys_search):
+        self.data = []
+        for i in range(self.tableSearch.count()):
+	        # 先清楚缓存
+            self.tableSearch.itemAt(i).widget().deleteLater()
+        for i, column in enumerate(self.key_search):
             data = {}
             # 用于信息输入的文本框
             line = QLineEdit()
@@ -72,33 +109,22 @@ class GUI(QMainWindow):
             data['widget'] = line
             self.data.append(data)
 
-        if self.ip=='localhost':
-            self.mode = SERVER
-        else:
-            self.mode = CLIENT
-        self.mode = SERVER      # 先强制为服务器版，解决socket端口映射问题后再改掉
-
-
-        if self.mode == CLIENT:     # 客户端需要和服务器进行socket通信
-            self.transfer = SocketTransferClient(ip=self.ip, port=self.port)
-
-
-    def loadJson(self, jsonPath):
-        with open(jsonPath, 'r',encoding='UTF-8') as f:
-            data = json.load(f)
-            return data
-    
-
-    def loadConfig(self):
-        result = self.loadJson("softwareConfig.json")
-        self.project_id = result["project_id"]
-        self.data_root = './data/' + self.project_id
-        self.ip = result["ip"]
-        self.port = int(result["port"])
-        self.mysql_username = result["username"]
-        self.mysql_password = result["password"]
-        self.database = result["database"]
-        self.table_name = result["table"]
+    def updateConfig(self, name='softwareConfig'):
+        new_config = {}
+        new_config["project_id"] = self.project_id
+        new_config["ip"] = self.ip
+        new_config["mysql_username"] = self.mysql_username
+        new_config["mysql_port"] = self.mysql_port
+        new_config["mysql_password"] = self.mysql_password
+        new_config["database"] = self.database
+        new_config["table_name"] = self.table_name
+        new_config["key_search"] = self.key_search
+        new_config["key_show"] = self.key_show
+        json_str = json.dumps(new_config, indent=4)
+        with open(name + '.json', 'w') as json_file:
+            json_file.write(json_str)
+        
+        
 
 
     # 连接数据库
@@ -109,7 +135,7 @@ class GUI(QMainWindow):
                                    user=self.mysql_username,
                                    password=self.mysql_password,
                                    database=self.database,
-                                   port=self.port)
+                                   port=self.mysql_port)
 
             self.cursor = self.conn.cursor()
             self.log("success")
@@ -119,7 +145,7 @@ class GUI(QMainWindow):
 
     # 查询按钮回调函数
     def search(self):
-    
+        time.sleep(0.1)
 
         # 清空表单
         self.cellEventEnable(False)
@@ -129,6 +155,7 @@ class GUI(QMainWindow):
         sql = self.sqlGenerate_search()
         self.cursor.execute(sql)
         ret = np.array(self.cursor.fetchall())
+        
         # 显示在表格控件中
         for data in ret:
             
@@ -138,8 +165,6 @@ class GUI(QMainWindow):
                 newItem = QTableWidgetItem(item_value)
                 self.tableShow.setItem(0, j, newItem)
         self.cellEventEnable(True)
-
-        
 
 
     def deleteSql(self):
@@ -172,6 +197,66 @@ class GUI(QMainWindow):
     ## 文件夹弹窗    
     #os.startfile(path)
 
+    # 添加字段
+    def addKeyToServer(self):
+        self.gui_keyAdd = GUI_keyAdd()
+        self.gui_keyAdd.show()
+        self.gui_keyAdd.buttonAdd.clicked.connect(self.keyAddEvent)  # 设置查询按钮的回调函数
+    def keyAddEvent(self):
+        key_name = self.gui_keyAdd.lineEdit.text()
+        key_type = self.gui_keyAdd.comboBox.currentText()
+        
+        if key_name.isdigit():
+            self.gui_keyAdd.lineEdit.setText('')
+            self.log('[key-'+key_name+'-'+key_type+']  字段命名不符合规范，增添失败！')
+            msg_box = QMessageBox(QMessageBox.Warning, 'Warning', '字段名需包含英文字母，请重新命名。')
+            msg_box.exec_()
+            return
+        sql = 'alter table '+ self.table_name +' add '\
+                + key_name+' ' + key_type + '(100)'
+        
+        print(sql)
+        self.cursor.execute(sql)
+        self.conn.commit()
+        self.log('[key-'+key_name+'-'+key_type+']  增添新字段成功！')
+        self.key_search.append(key_name)
+        self.key_show.append([key_name,key_type])
+        self.updateConfig()
+        self.loadConfig()
+
+        self.search()
+    
+    # 删除字段
+    def deleteKeyToServer(self):
+        selected_items = self.tableShow.selectedItems()
+        if len(selected_items)==0:
+            return
+        col = selected_items[0].column() 
+
+        key_name = self.keys_name[col]
+        reply = QMessageBox.question(self, '确认', '是否确认删除\''+key_name+'\'这个字段？',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.No:
+            return
+
+        sql = "alter table "+ self.table_name + ' drop column ' + key_name
+        print(sql)
+        self.cursor.execute(sql)
+        self.conn.commit()
+
+        self.log('[key-'+key_name+']  删除字段成功！')
+
+        # 更新配置文件
+        del self.key_show[col]
+        print(col,len(self.key_search),self.key_search[col-7])
+        del self.key_search[col-7]
+        #print(self.key_search)
+
+        self.updateConfig()
+        self.loadConfig()
+
+        self.search()
+
 
     # insert语句
     def uploadToServer(self):
@@ -201,7 +286,6 @@ class GUI(QMainWindow):
         self.log('-- 录入成功')
         self.search()
 
-        
         # 生成对应文件夹
         target_folder = os.path.join(self.data_root,datanum)
         if not os.path.exists(target_folder):
@@ -342,6 +426,8 @@ class GUI(QMainWindow):
         #print(data_id,data_key,data_content)
         #print(self.keys_name)
        # self.settext('第%s行，第%s列 , 数据改变为:%s'%(row,col,txt))
+
+
 
 
     def log(self,text):

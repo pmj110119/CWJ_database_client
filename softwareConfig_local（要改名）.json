@@ -1,8 +1,8 @@
 {
     "project_id": "PM20210001",
-    "ip": "3d5732f187.zicp.vip",
+    "ip": "localhost",
     "mysql_username": "root",
-    "mysql_port": 18486,
+    "mysql_port": "3306",
     "mysql_password": "jrk.com",
     "database": "test",
     "table_name": "experimentdata_save",

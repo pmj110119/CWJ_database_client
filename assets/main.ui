@@ -35,23 +35,8 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,1,1,1">
-          <item>
-           <widget class="QTextBrowser" name="logBrowser"/>
-          </item>
-          <item>
-           <widget class="QPushButton" name="buttonSearch">
-            <property name="font">
-             <font>
-              <pointsize>15</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>查询</string>
-            </property>
-           </widget>
-          </item>
-          <item>
+         <layout class="QGridLayout" name="gridLayout" columnstretch="3,1,1,1,1,0">
+          <item row="0" column="2" rowspan="2">
            <widget class="QPushButton" name="buttonDelete">
             <property name="font">
              <font>
@@ -63,7 +48,46 @@
             </property>
            </widget>
           </item>
-          <item>
+          <item row="0" column="1" rowspan="2">
+           <widget class="QPushButton" name="buttonSearch">
+            <property name="font">
+             <font>
+              <pointsize>15</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>查询</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QPushButton" name="buttonKeyAdd">
+            <property name="font">
+             <font>
+              <pointsize>15</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>新增字段</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" rowspan="2">
+           <widget class="QTextBrowser" name="logBrowser"/>
+          </item>
+          <item row="1" column="4">
+           <widget class="QPushButton" name="buttonKeyDelete">
+            <property name="font">
+             <font>
+              <pointsize>15</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>删除字段</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3" rowspan="2">
            <widget class="QPushButton" name="buttonUpload">
             <property name="font">
              <font>

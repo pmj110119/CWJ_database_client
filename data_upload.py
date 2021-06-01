@@ -20,7 +20,7 @@ class GUI_upload(QMainWindow):
 
         # 表的初始化/显示表头
         table = self.loadJson("softwareConfig.json")
-        self.table_select = table['search']
+        self.table_select = table['key_search']
 
         for i, column in enumerate(self.table_select):
             data = {}
@@ -49,6 +49,14 @@ class GUI_upload(QMainWindow):
         with open(jsonPath, 'r',encoding='UTF-8') as f:
             data = json.load(f)
             return data
+
+
+class GUI_keyAdd(QMainWindow):
+
+    def __init__(self):
+        super(GUI_keyAdd, self).__init__()  # 调用父类的构造函数
+        uic.loadUi("./assets/keyAdd.ui", self)
+        
 
 
 
