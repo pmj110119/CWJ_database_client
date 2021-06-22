@@ -10,49 +10,54 @@ import time
 import operator
 import os
 import struct
-
+import glob
 
 # 实现下载功能
 def download(connect):
-    # 获取文件目录
-    files = os.listdir()
-    # 用于传输文件目录的字符串
+    target_folder = connect.recv(1024).decode()
+    print(target_folder)
+    files = glob.glob(os.path.join(target_folder,'*'))   # 获取文件目录
+    
     liststr = ''
-    # 将所有文件名传入字符串中
     for i in files:
         liststr += i + '\n'
     # 如果文件列表为空，将不继续执行下载任务
+    print(liststr)
     if operator.eq(liststr, ''):
-        connect.send(''.encode())
+        print('传输开始。。。')
+        connect.send('-1'.encode())
+        print('传输完毕了。。。')
+
     # 如果文件列表不为空，开始下载任务
     else:
         # 向客户端传送文件列表
+        print('传输开始。。。')
         connect.send(liststr.encode())
+        print('传输完毕了。。。')
         while True:
             # 获取客户端要下载的文件名，如果不存在就继续输入
-            filename = connect.recv(100).decode()
+            filename = connect.recv(1024).decode()
+            print('接收到：',filename)
+            if filename == '-1':
+                break
             if filename not in files:
                 connect.send('文件不存在！'.encode())
-            else:
-                connect.send('开始文件传输！'.encode())
-                break
-        # 将文件信息打包发送给客服端
-        fhead = struct.pack('128sI', filename.encode(), os.stat(filename).st_size)
-        connect.send(fhead)
-        # 传送文件信息
-        with open(filename, 'rb') as f:
-            while True:
-                filedata = f.read(1024)
-                if not filedata:
-                    break
-                connect.send(filedata)
-        # 存储到日志中
-        print('%s\n下载文件:\n%s\n成功\n\n' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
-        os.chdir('..')
-        with open('data.log', 'a') as f:
-            f.write(
-                '%s\n下载文件:\n%s\n成功\n\n' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
-        os.chdir('files')
+                continue
+     
+            # 将文件信息打包发送给客户端
+            filepath = filename
+            print(filepath,os.stat(filepath).st_size)
+            fhead = struct.pack('128sI', filepath.encode(), os.stat(filepath).st_size)
+            connect.send(fhead)
+            # 传送文件信息
+            with open(filepath, 'rb') as f:
+                while True:
+                    filedata = f.read(1024)
+                    if not filedata:
+                        break
+                    connect.send(filedata)
+            print('====%s====\n文件传输成功:\n%s' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
+
 
 
 # 实现上传功能

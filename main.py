@@ -38,9 +38,10 @@ class GUI(QMainWindow):
         self.buttonKeyAdd.clicked.connect(self.addKeyToServer)  # 设置查询按钮的回调函数
         self.buttonKeyDelete.clicked.connect(self.deleteKeyToServer)  # 设置查询按钮的回调函数
 
+        self.buttonDataUpload.clicked.connect(self.dataUpload)  # 设置查询按钮的回调函数
+        self.buttonDataDownload.clicked.connect(self.dataDownload)  # 设置查询按钮的回调函数
+
         
-
-
 
         if self.ip=='localhost':
             self.mode = SERVER
@@ -436,6 +437,38 @@ class GUI(QMainWindow):
 
 
 
+    def dataDownload(self):
+        selected_items = self.tableShow.selectedItems()
+        if len(selected_items)==0:
+            return
+        row = selected_items[0].row() 
+        datanum = self.tableShow.item(row,2).text()
+        target_folder = os.path.join(self.data_root,datanum)
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
+        if self.mode == CLIENT:
+            self.transfer.download(target_folder,target_folder)
+        else:
+            return
+        self.log('已更新数据：'+datanum)
+
+    def dataUpload(self):
+        selected_items = self.tableShow.selectedItems()
+        if len(selected_items)==0:
+            return
+        row = selected_items[0].row() 
+        datanum = self.tableShow.item(row,2).text()
+        target_folder = os.path.join(self.data_root,datanum)
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
+
+        # 选择文件并传输
+        file = QFileDialog.getOpenFileName(self, '选择文件')[0]#, '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
+        if self.mode == CLIENT:
+            self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
+        else:
+            shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
+        self.log('上传文件至'+datanum+': '+file)
 
     def log(self,text):
         #print(time.strftime("[%H:%M:%S]  ")+text,time.localtime())
