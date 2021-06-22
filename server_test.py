@@ -60,10 +60,15 @@ def upload(connect):
     FILEINFO_SIZE = struct.calcsize('128sI')
     try:
         # 获取打包好的文件信息，并解包
+        #target_folder = connect.recv(1024).decode()  # 首先接收客户端发来的命令码
+        #print(target_folder)
         fhead = connect.recv(FILEINFO_SIZE)
         filename, filesize = struct.unpack('128sI', fhead)
         filename = filename.decode().strip('\00')
         # 文件名必须去掉\00，否则会报错，此处为接收文件
+        folder = '/'.join(filename.replace('\\','/').split('/')[:-1])
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         with open(filename, 'wb') as f:
             ressize = filesize
             while True:
@@ -80,25 +85,17 @@ def upload(connect):
                 if ressize < 0:
                     break
         # 存储到日志
-        print('%s\n传输文件:\n%s\n成功\n\n' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
-        os.chdir('..')
-        with open('data.log', 'a') as f:
-            f.write(
-                '%s\n传输文件:\n%s\n成功\n\n' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
-        os.chdir('files')
+        print('====%s====\n传输成功:\n%s' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
+     
     except Exception as e:
-        print('%s\n传输文件:\n%s\n成功\n\n' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
-        os.chdir('..')
-        with open('data.log', 'a') as f:
-            f.write(
-                '%s\n传输文件:\n%s\n失败\n\n' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
-        os.chdir('files')
+        print('====%s====\n传输失败:\n%s' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
+       
 
 
 def handle(connect, address):
     print('%s:%s is connectting...' % (address))
     while True:
-        order = connect.recv(100).decode()  # 首先接收客户端发来的命令码
+        order = connect.recv(1024).decode()  # 首先接收客户端发来的命令码
         if operator.eq(order, '1'):
             download(connect)
         elif operator.eq(order, '2'):
@@ -110,10 +107,10 @@ def handle(connect, address):
 
 
 if __name__ == '__main__':
-    if not os.path.exists('files'):
-        os.mkdir('files')
-    # 工作目录换到files文件夹
-    os.chdir('files')
+    # if not os.path.exists('files'):
+    #     os.mkdir('files')
+    # # 工作目录换到files文件夹
+    # os.chdir('files')
     # 建立socket链接，并监听8002端口
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('', 18486))

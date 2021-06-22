@@ -12,15 +12,17 @@ import os
 
 
 class SocketTransferClient():
-    def __init__(self, ip='3d5732f187.zicp.vip', port=18486):
+    def __init__(self, ip='3jk9901196.qicp.vip', port=18486):
+        # ip = 'localhost'
+        # port=18486
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((ip, port))
         print('socket连接成功！')
         line = self.sock.recv(1024)
         print(line)
-        self.sock.send("jrk.com".encode())
-        line = self.sock.recv(1024)
-        print(line)
+        #self.sock.send("jrk.com".encode())
+        #line = self.sock.recv(1024)
+        #print(line)
         #print(line.decode())
 
     # 实现下载功能
@@ -63,11 +65,12 @@ class SocketTransferClient():
 
 
     # 实现上传功能
-    def upload(self,filepath):
+    def upload(self,filepath,target_folder):
         self.sock.send('2'.encode())
+        #self.sock.send(target_folder.encode())
         # 获取文件路径，并将文件信息打包发送给服务端
         filename = os.path.basename(filepath)
-        fhead = struct.pack('128sI', filename.encode(), os.stat(filename).st_size)
+        fhead = struct.pack('128sI', target_folder.encode(), os.stat(filepath).st_size)
         self.sock.send(fhead)
         # 传送文件
         with open(filepath, 'rb') as f:

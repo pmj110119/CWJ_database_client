@@ -46,11 +46,11 @@ class GUI(QMainWindow):
             self.mode = SERVER
         else:
             self.mode = CLIENT
-        self.mode = SERVER      # 先强制为服务器版，解决socket端口映射问题后再改掉
+        self.mode = CLIENT      # 先强制为服务器版，解决socket端口映射问题后再改掉
 
 
         if self.mode == CLIENT:     # 客户端需要和服务器进行socket通信
-            self.transfer = SocketTransferClient(ip=self.ip, port=self.port)
+            self.transfer = SocketTransferClient(ip=self.ip, port=self.socket_port)
 
         self.search()
     def loadJson(self, jsonPath):
@@ -65,6 +65,7 @@ class GUI(QMainWindow):
         self.ip = result["ip"]
         self.mysql_username = result["mysql_username"]
         self.mysql_port = int(result["mysql_port"])
+        self.socket_port = int(result["socket_port"])
         self.mysql_password = result["mysql_password"]
         self.database = result["database"]
         self.table_name = result["table_name"]
@@ -130,18 +131,23 @@ class GUI(QMainWindow):
     # 连接数据库
     def mysqlSelfInspection(self):
         self.log('正在连接数据库...')
-        try:
-            self.conn = pymysql.connect(host=self.ip,
-                                   user=self.mysql_username,
-                                   password=self.mysql_password,
-                                   database=self.database,
-                                   port=self.mysql_port)
+        #try:
+        # self.conn = pymysql.connect(host="localhost",#self.ip,
+        #                         user='root',
+        #                         password='751224',#self.mysql_password,
+        #                         database=self.database,
+        #                         port=3306)#self.mysql_port)
+        self.conn = pymysql.connect(host=self.ip,
+                                user=self.mysql_username,
+                                password=self.mysql_password,
+                                database=self.database,
+                                port=self.mysql_port)
 
-            self.cursor = self.conn.cursor()
-            self.log("success")
-        except Exception as e:
-            self.log('报错：'+e)
-            self.log("数据库连接失败!")
+        self.cursor = self.conn.cursor()
+        self.log("success")
+        # except Exception as e:
+        #     self.log('报错：'+e)
+        #     self.log("数据库连接失败!")
 
     # 查询按钮回调函数
     def search(self):
@@ -297,7 +303,8 @@ class GUI(QMainWindow):
             file = self.gui_upload.listSelectFiles.item(i).text()
             # 根据软件模式选择文件传输方式
             if self.mode == CLIENT:
-                self.transfer.upload(file)
+                print('上传至服务器：',file)
+                self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
             else:
                 shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
         self.gui_upload.listSelectFiles.clear()
