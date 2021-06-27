@@ -276,10 +276,10 @@ class GUI(QMainWindow):
         pass
     
     def uploadSelectFiles(self):
-        openfile = self.gui_upload.openfile()
+        openfiles = self.gui_upload.openfile()
         #openfile = QFileDialog.getOpenFileName(self, '选择文件')[0]#, '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
-        #for file in openfiles:
-        self.gui_upload.listSelectFiles.addItem(openfile)   # 将此文件添加到列表中
+        for file in openfiles:
+            self.gui_upload.listSelectFiles.addItem(file)   # 将此文件添加到列表中
         #self.allFiles.itemClicked.connect(self.itemClick)   #列表框关联时间，用信号槽的写法方式不起作用
 
     def uploadSqlGenerator(self):
@@ -304,10 +304,16 @@ class GUI(QMainWindow):
             file = self.gui_upload.listSelectFiles.item(i).text()
             # 根据软件模式选择文件传输方式
             if self.mode == CLIENT:
-                print('上传至服务器：',file)
-                self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
+                print('上传至服务器：',file,os.path.join(target_folder,os.path.basename(file)))
+                res = self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
+                if res==True:
+                    self.log('上传成功：'+file)
+                else:
+                    self.log('上传失败：'+file)
             else:
                 shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
+
+            time.sleep(0.2)
         self.gui_upload.listSelectFiles.clear()
 
 
@@ -465,10 +471,14 @@ class GUI(QMainWindow):
         # 选择文件并传输
         file = QFileDialog.getOpenFileName(self, '选择文件')[0]#, '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
         if self.mode == CLIENT:
-            self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
+            print('上传至服务器：',file,os.path.join(target_folder,os.path.basename(file)))
+            res = self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
+            if res==True:
+                self.log('上传成功：'+file)
+            else:
+                self.log('上传失败：'+file)
         else:
             shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
-        self.log('上传文件至'+datanum+': '+file)
 
     def log(self,text):
         #print(time.strftime("[%H:%M:%S]  ")+text,time.localtime())

@@ -41,7 +41,7 @@ class GUI_upload(QMainWindow):
             self.data.append(data)
 
     def openfile(self):
-        openfile = QFileDialog.getOpenFileName(self, '选择文件')[0]#, '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
+        openfile = QFileDialog.getOpenFileNames(self, '选择文件')[0]#, '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
         return openfile
 
     

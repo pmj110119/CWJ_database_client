@@ -74,6 +74,17 @@ def upload(connect):
         folder = '/'.join(filename.replace('\\','/').split('/')[:-1])
         if not os.path.exists(folder):
             os.makedirs(folder)
+        # with open(filename, 'ab') as f:
+        #     while True:
+        #         # 接收数据
+        #         data = connect.recv(1024)
+        #         if data == b'quit':
+        #             break
+        #         # 写入文件
+        #         f.write(data)
+        #         # 接受完成标志
+        #         connect.send('success'.encode())
+
         with open(filename, 'wb') as f:
             ressize = filesize
             while True:
@@ -91,10 +102,12 @@ def upload(connect):
                     break
         # 存储到日志
         print('====%s====\n传输成功:\n%s' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
-     
+        #connect.send('0'.encode())
+        connect.recv(1024)
     except Exception as e:
         print('====%s====\n传输失败:\n%s' % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), filename))
-       
+        #connect.send('-1'.encode())
+        connect.recv(1024)
 
 
 def handle(connect, address):
@@ -118,7 +131,7 @@ if __name__ == '__main__':
     # os.chdir('files')
     # 建立socket链接，并监听8002端口
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 18486))
+    sock.bind(('', 1111))
     sock.listen(100)
     while True:
         connect, address = sock.accept()

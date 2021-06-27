@@ -13,8 +13,8 @@ import os
 
 class SocketTransferClient():
     def __init__(self, ip='3jk9901196.qicp.vip', port=18486):
-        ip = 'localhost'
-        port=18486
+        # ip = 'localhost'
+        # port=1111
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((ip, port))
         print('socket连接成功！')
@@ -74,11 +74,16 @@ class SocketTransferClient():
 
     # 实现上传功能
     def upload(self,filepath,target_folder):
+        if not os.path.exists(filepath):
+            return
         self.sock.send('2'.encode())
+        time.sleep(0.3)
+        #print('send:','2'.encode())
         #self.sock.send(target_folder.encode())
         # 获取文件路径，并将文件信息打包发送给服务端
         filename = os.path.basename(filepath)
         fhead = struct.pack('128sI', target_folder.encode(), os.stat(filepath).st_size)
+        #print('send:',fhead)
         self.sock.send(fhead)
         # 传送文件
         with open(filepath, 'rb') as f:
@@ -87,7 +92,36 @@ class SocketTransferClient():
                 if not filedata:
                     break
                 self.sock.send(filedata)
+        # with open(filepath,'rb') as f:
+        #     #按每一段分割文件上传
+        #     for i in f:
+        #         self.sock.send(i)
+        #         #等待接收完成标志
+        #         data = ''
+        #         while data=='':
+        #             data=self.sock.recv(1024)
+        #         #判断是否真正接收完成
+        #         if data != b'success':
+        #             break
+        # #给服务端发送结束信号
+        self.sock.send('quit'.encode())
+        time.sleep(0.5)
+        res = self.sock.recv(1024).decode()
+        print(res)
+        if res!='success':
+            print('发送失败！')
+            return False
+        else:
+            print('发送成功！')
+            return True
+
+
         print('文件传输结束')
+        # res = ''
+        # time_start = time.time()
+        # time_wait = 0
+
+
 
     def listen(self):
         line = self.sock.recv(1024)
