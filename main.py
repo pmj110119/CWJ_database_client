@@ -22,6 +22,7 @@ CLIENT = 1
 
 class SocketThread(QThread):
     result = pyqtSignal(list)  # 创建一个自定义信号，元组参数
+    err = pyqtSignal(bool)  # 创建一个自定义信号，元组参数
     def __init__(self,ip,port):
         super(SocketThread,self).__init__()
         self.transfer = SocketTransferClient(ip=ip, port=port)
@@ -31,16 +32,20 @@ class SocketThread(QThread):
     def update_task(self,order,data):
         self.task.append([order,data])
     def run(self):
-        self.if_running = True
-        while self.task:
-            order, data = self.task.popleft()
-            if order=='upload':
-                res = self.transfer.upload(data[0],data[1])
-            elif order=='download':
-                res = self.transfer.download(data[0],data[1])
-            self.result.emit([order,res,data])  # 发射自定义信号
-        self.if_running = False
-        pass
+        try:
+            self.if_running = True
+            while self.task:
+                order, data = self.task.popleft()
+                if order=='upload':
+                    res = self.transfer.upload(data[0],data[1])
+                elif order=='download':
+                    res = self.transfer.download(data)
+                self.result.emit([order,res,data])  # 发射自定义信号
+                time.sleep(0.3)
+            self.if_running = False
+        except:
+            self.err.emit(True)
+       
 
 
 class GUI(QMainWindow):
@@ -76,13 +81,21 @@ class GUI(QMainWindow):
             #self.transfer = SocketTransferClient(ip=self.ip, port=self.socket_port)
             self.sock_thread = SocketThread(ip=self.ip, port=self.socket_port)
             self.sock_thread.result.connect(self.socketResultLog)
+            self.sock_thread.err.connect(self.socketError)
         self.search()
+    def socketError(self,err):  # 重启线程
+        if self.sock_thread:
+            del self.sock_thread
+            self.sock_thread = SocketThread(ip=self.ip, port=self.socket_port)
+            self.sock_thread.result.connect(self.socketResultLog)
+            self.sock_thread.err.connect(self.socketError)
+            self.log('数据传输崩溃，已重连')
+
     def socketResultLog(self,result):
-        print(result)
         [order,res,data] = result
         order = '上传' if order=='upload' else '下载'
         res = '成功' if res==True else '失败'
-        self.log(order+res+':'+data[0])
+        self.log(order+res+':'+data[1])
 
 
     def loadJson(self, jsonPath):
@@ -104,7 +117,7 @@ class GUI(QMainWindow):
         self.key_search = result["key_search"]
         self.key_show = result["key_show"]
 
-        self.data_root = './data/' + self.project_id
+        self.data_root = 'data/' + self.project_id
         
 
         self.keys_name = []
@@ -321,12 +334,12 @@ class GUI(QMainWindow):
         self.sock_thread.update_task('upload',[file,target_path])
         self.sock_thread.start()
 
-    def socketDownload(self,local_folder,target_folder):
+    def socketDownload(self,target_folder):
         if self.sock_thread.if_running:
             msg_box = QMessageBox(QMessageBox.Warning, 'Warning', '数据传输还未结束，请等待！')
             msg_box.exec_()
             return
-        self.sock_thread.update_task('download',[local_folder,target_folder])
+        self.sock_thread.update_task('download',target_folder)
         self.sock_thread.start()
 
     def uploadSqlGenerator(self):
@@ -337,7 +350,7 @@ class GUI(QMainWindow):
    
         self.cursor.execute(sql)
         self.conn.commit()
-        self.log('-- 录入成功')
+        self.log('文本数据已录入数据库，正在上传文件数据')
         self.search()
 
         # 生成对应文件夹
@@ -352,12 +365,7 @@ class GUI(QMainWindow):
             # 根据软件模式选择文件传输方式
             if self.mode == CLIENT:
                 print('上传至服务器：',file,os.path.join(target_folder,os.path.basename(file)))
-                self.socketUpload(file,os.path.join(target_folder,os.path.basename(file)),batch=True)
-                # res = self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
-                # if res==True:
-                #     self.log('上传成功：'+file)
-                # else:
-                #     self.log('上传失败：'+file)
+                self.socketUpload(file,target_folder,batch=True)
             else:
                 shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
 
@@ -502,7 +510,7 @@ class GUI(QMainWindow):
         if not os.path.exists(target_folder):
             os.makedirs(target_folder)
         if self.mode == CLIENT:
-            self.socketDownload(target_folder,target_folder)
+            self.socketDownload(target_folder)
             #self.transfer.download(target_folder,target_folder)
         else:
             return
