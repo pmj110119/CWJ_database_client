@@ -1,6 +1,6 @@
 # coding:utf-8
 '''
-	@DateTime: 	2021-05-16
+	@DateTime: 	2021-06-28
 	@Version: 	1.0
 	@Author: 	pmj
 '''
@@ -15,38 +15,37 @@ class SocketTransferClient():
     def __init__(self, ip='3jk9901196.qicp.vip', port=18486):
         # ip = 'localhost'
         # port=1111
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((ip, port))
-        print('socket连接成功！')
-        line = self.sock.recv(1024)
-        print(line)
-        #self.sock.send("jrk.com".encode())
-        #line = self.sock.recv(1024)
-        #print(line)
-        #print(line.decode())
+        self.ip = ip
+        self.port = port
+
+        
+
 
     # 实现下载功能
     def download(self,target_folder,local_folder='.'):
-        self.sock.send('1'.encode())
-        self.sock.send(target_folder.encode())
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((self.ip, self.port))
+        print(sock.recv(1024).decode())
+        sock.send('1'.encode())
+        sock.send(target_folder.encode())
 
         # 从服务端接收文件列表
-        filelist = self.sock.recv(1024).decode()
+        filelist = sock.recv(1024).decode()
         if operator.eq(filelist, '-1'):
             print('没有可以下载的文件')
-            return
+            return False
         print('可下载的文件有：',filelist)
         files = filelist.split('\n')
 
         for file in files:
             if file=='' or file==' ' or file=='\n':
                 break
-            self.sock.send(file.encode())
+            sock.send(file.encode())
             # 获取包大小，并解压
             FILEINFO_SIZE = struct.calcsize('128sI')
             try:
-                #fhead = self.sock.recv(1024)
-                fhead = self.sock.recv(FILEINFO_SIZE)
+                #fhead = sock.recv(1024)
+                fhead = sock.recv(FILEINFO_SIZE)
                 filename, filesize = struct.unpack('128sI', fhead)
     
                 # 接收文件
@@ -55,9 +54,9 @@ class SocketTransferClient():
                     ressize = filesize
                     while True:
                         if ressize > 1024:
-                            filedata = self.sock.recv(1024)
+                            filedata = sock.recv(1024)
                         else:
-                            filedata = self.sock.recv(ressize)
+                            filedata = sock.recv(ressize)
                             f.write(filedata)
                             break
                         if not filedata:
@@ -70,64 +69,52 @@ class SocketTransferClient():
             except Exception as e:
                 print(e)
                 print('文件传输失败!')
-        self.sock.send('-1'.encode())
+                return False
+        sock.send('-1'.encode())
+        sock.send('3'.encode())
+        sock.close()
+        return True
 
     # 实现上传功能
     def upload(self,filepath,target_folder):
         if not os.path.exists(filepath):
             return
-        self.sock.send('2'.encode())
-        time.sleep(0.3)
-        #print('send:','2'.encode())
-        #self.sock.send(target_folder.encode())
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((self.ip, self.port))
+        print(sock.recv(1024).decode())
+        sock.send('2'.encode())
+        time.sleep(0.2)
         # 获取文件路径，并将文件信息打包发送给服务端
         filename = os.path.basename(filepath)
         fhead = struct.pack('128sI', target_folder.encode(), os.stat(filepath).st_size)
         #print('send:',fhead)
-        self.sock.send(fhead)
+        sock.send(fhead)
         # 传送文件
         with open(filepath, 'rb') as f:
             while True:
                 filedata = f.read(1024)
                 if not filedata:
                     break
-                self.sock.send(filedata)
-        # with open(filepath,'rb') as f:
-        #     #按每一段分割文件上传
-        #     for i in f:
-        #         self.sock.send(i)
-        #         #等待接收完成标志
-        #         data = ''
-        #         while data=='':
-        #             data=self.sock.recv(1024)
-        #         #判断是否真正接收完成
-        #         if data != b'success':
-        #             break
-        # #给服务端发送结束信号
-        self.sock.send('quit'.encode())
-        time.sleep(0.5)
-        res = self.sock.recv(1024).decode()
-        print(res)
-        if res!='success':
-            print('发送失败！')
-            return False
-        else:
+                sock.send(filedata)
+
+
+        # 给服务端发送结束信号
+        sock.send('quit'.encode())
+        time.sleep(0.1)
+        
+        res = sock.recv(1024).decode()
+        sock.send('3'.encode())
+        sock.close()
+        if 'success' in res:
             print('发送成功！')
             return True
+        else:
+            print('发送失败！')
+            return False
+
+        
 
 
-        print('文件传输结束')
-        # res = ''
-        # time_start = time.time()
-        # time_wait = 0
-
-
-
-    def listen(self):
-        line = self.sock.recv(1024)
-        print(line.decode())
-    def stop(self):
-        self.sock.close()
 
 
 

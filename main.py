@@ -15,9 +15,33 @@ import time
 import os
 import shutil
 from data_upload import GUI_keyAdd, GUI_upload
-
+import collections
 SERVER = 0
 CLIENT = 1
+
+
+class SocketThread(QThread):
+    result = pyqtSignal(list)  # 创建一个自定义信号，元组参数
+    def __init__(self,ip,port):
+        super(SocketThread,self).__init__()
+        self.transfer = SocketTransferClient(ip=ip, port=port)
+        self.if_running = False
+        self.task = collections.deque()
+
+    def update_task(self,order,data):
+        self.task.append([order,data])
+    def run(self):
+        self.if_running = True
+        while self.task:
+            order, data = self.task.popleft()
+            if order=='upload':
+                res = self.transfer.upload(data[0],data[1])
+            elif order=='download':
+                res = self.transfer.download(data[0],data[1])
+            self.result.emit([order,res,data])  # 发射自定义信号
+        self.if_running = False
+        pass
+
 
 class GUI(QMainWindow):
 
@@ -47,13 +71,20 @@ class GUI(QMainWindow):
             self.mode = SERVER
         else:
             self.mode = CLIENT
-        self.mode = CLIENT      # 先强制为服务器版，解决socket端口映射问题后再改掉
-
 
         if self.mode == CLIENT:     # 客户端需要和服务器进行socket通信
-            self.transfer = SocketTransferClient(ip=self.ip, port=self.socket_port)
-
+            #self.transfer = SocketTransferClient(ip=self.ip, port=self.socket_port)
+            self.sock_thread = SocketThread(ip=self.ip, port=self.socket_port)
+            self.sock_thread.result.connect(self.socketResultLog)
         self.search()
+    def socketResultLog(self,result):
+        print(result)
+        [order,res,data] = result
+        order = '上传' if order=='upload' else '下载'
+        res = '成功' if res==True else '失败'
+        self.log(order+res+':'+data[0])
+
+
     def loadJson(self, jsonPath):
         with open(jsonPath, 'r',encoding='UTF-8') as f:
             data = json.load(f)
@@ -282,6 +313,22 @@ class GUI(QMainWindow):
             self.gui_upload.listSelectFiles.addItem(file)   # 将此文件添加到列表中
         #self.allFiles.itemClicked.connect(self.itemClick)   #列表框关联时间，用信号槽的写法方式不起作用
 
+    def socketUpload(self,file,target_path,batch=False):
+        if self.sock_thread.if_running and not batch:
+            msg_box = QMessageBox(QMessageBox.Warning, 'Warning', '数据传输还未结束，请等待！')
+            msg_box.exec_()
+            return
+        self.sock_thread.update_task('upload',[file,target_path])
+        self.sock_thread.start()
+
+    def socketDownload(self,local_folder,target_folder):
+        if self.sock_thread.if_running:
+            msg_box = QMessageBox(QMessageBox.Warning, 'Warning', '数据传输还未结束，请等待！')
+            msg_box.exec_()
+            return
+        self.sock_thread.update_task('download',[local_folder,target_folder])
+        self.sock_thread.start()
+
     def uploadSqlGenerator(self):
         # 生成sql语句并提取执行结果
         sql, datanum = self.sqlGenerate_insert(self.gui_upload)
@@ -305,15 +352,17 @@ class GUI(QMainWindow):
             # 根据软件模式选择文件传输方式
             if self.mode == CLIENT:
                 print('上传至服务器：',file,os.path.join(target_folder,os.path.basename(file)))
-                res = self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
-                if res==True:
-                    self.log('上传成功：'+file)
-                else:
-                    self.log('上传失败：'+file)
+                self.socketUpload(file,os.path.join(target_folder,os.path.basename(file)),batch=True)
+                # res = self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
+                # if res==True:
+                #     self.log('上传成功：'+file)
+                # else:
+                #     self.log('上传失败：'+file)
             else:
                 shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
 
             time.sleep(0.2)
+        
         self.gui_upload.listSelectFiles.clear()
 
 
@@ -453,7 +502,8 @@ class GUI(QMainWindow):
         if not os.path.exists(target_folder):
             os.makedirs(target_folder)
         if self.mode == CLIENT:
-            self.transfer.download(target_folder,target_folder)
+            self.socketDownload(target_folder,target_folder)
+            #self.transfer.download(target_folder,target_folder)
         else:
             return
         self.log('已更新数据：'+datanum)
@@ -472,11 +522,12 @@ class GUI(QMainWindow):
         file = QFileDialog.getOpenFileName(self, '选择文件')[0]#, '', 'image files(*.jpg , *.png, *.tiff, *.tif)')[0]
         if self.mode == CLIENT:
             print('上传至服务器：',file,os.path.join(target_folder,os.path.basename(file)))
-            res = self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
-            if res==True:
-                self.log('上传成功：'+file)
-            else:
-                self.log('上传失败：'+file)
+            self.socketUpload(file,os.path.join(target_folder,os.path.basename(file)))
+            # res = self.transfer.upload(file,os.path.join(target_folder,os.path.basename(file)))
+            # if res==True:
+            #     self.log('上传成功：'+file)
+            # else:
+            #     self.log('上传失败：'+file)
         else:
             shutil.copyfile(file,os.path.join(target_folder,os.path.basename(file)))
 

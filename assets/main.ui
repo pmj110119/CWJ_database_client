@@ -35,12 +35,12 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QGridLayout" name="gridLayout" columnstretch="3,1,1,1,1,0">
+         <layout class="QGridLayout" name="gridLayout" columnstretch="5,1,1,1,1,1">
           <item row="1" column="4">
            <widget class="QPushButton" name="buttonKeyDelete">
             <property name="font">
              <font>
-              <pointsize>15</pointsize>
+              <pointsize>13</pointsize>
              </font>
             </property>
             <property name="text">
@@ -52,7 +52,7 @@
            <widget class="QPushButton" name="buttonKeyAdd">
             <property name="font">
              <font>
-              <pointsize>15</pointsize>
+              <pointsize>13</pointsize>
              </font>
             </property>
             <property name="text">
@@ -103,7 +103,7 @@
            <widget class="QPushButton" name="buttonDataUpload">
             <property name="font">
              <font>
-              <pointsize>15</pointsize>
+              <pointsize>13</pointsize>
              </font>
             </property>
             <property name="text">
@@ -115,7 +115,7 @@
            <widget class="QPushButton" name="buttonDataDownload">
             <property name="font">
              <font>
-              <pointsize>15</pointsize>
+              <pointsize>13</pointsize>
              </font>
             </property>
             <property name="text">

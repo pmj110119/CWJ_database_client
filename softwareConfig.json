@@ -1,12 +1,12 @@
 {
-    "project_id": "PM20210001",
+    "project_id": "PM20210002",
     "ip": "3jk9901196.qicp.vip",
     "mysql_username": "root",
     "mysql_port": 50816,
     "mysql_password": "jrk.com",
     "socket_port": 46364,
     "database": "test",
-    "table_name": "experimentdata_save",
+    "table_name": "DepartmentOfPathology ",
     "key_search": [
         "datadescribe",
         "experimentdate",
