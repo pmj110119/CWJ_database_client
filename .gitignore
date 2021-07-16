@@ -4,6 +4,8 @@ data
 build
 dist
 release
+release0714
+*.zip
 *.spec
 *.rar
 *.txt
@@ -11,3 +13,7 @@ release
 *.log
 *.jpg
 *png
+*copy*
+*（*）*
+*.vscode*
+transfer_client2.py

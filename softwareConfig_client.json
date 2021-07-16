@@ -1,11 +1,12 @@
 {
-    "project_id": "PM20210001",
-    "ip": "localhost",
+    "user_id": "test",
+    "password": "12345",
+    "ip": "3jk9901196.qicp.vip",
     "mysql_username": "root",
-    "mysql_port": "3306",
+    "mysql_port": "50816",
     "mysql_password": "jrk.com",
+    "socket_port": "46364",
     "database": "test",
-    "table_name": "experimentdata_save",
     "key_search": [
         "datadescribe",
         "experimentdate",
@@ -24,10 +25,7 @@
         "fov",
         "shootnum",
         "zslice",
-        "matchsize",
-        "test_key_1",
-        "test_key_2",
-        "test_key_3"
+        "matchsize"
     ],
     "key_show": [
         [
@@ -128,18 +126,6 @@
         ],
         [
             "matchsize",
-            "varchar"
-        ],
-        [
-            "test_key_1",
-            "varchar"
-        ],
-        [
-            "test_key_2",
-            "varchar"
-        ],
-        [
-            "test_key_3",
             "varchar"
         ]
     ]

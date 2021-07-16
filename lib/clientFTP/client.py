@@ -10,15 +10,20 @@ from lib.clientFTP import settings
 from lib.clientFTP import code
 from lib.clientFTP import common
 import time
+from PyQt5.QtCore import pyqtSignal,QObject
 
-
-class client(object):
+class client(QObject):
+    processbar_step = pyqtSignal(int)
     def __init__(self,server_addr, server_port):
+        super(client, self).__init__()  # 调用父类的构造函数
         self.username =""
         self.totalspace = 0
         self.userspace = 0
         self.client = socket.socket()
         self.__server = (server_addr, server_port)
+
+
+            
     def connect(self):
         """
         客户端连接验证
@@ -69,13 +74,14 @@ class client(object):
         #登录认证
         auth_status = self.check_auth(username,password)
         if auth_status == code.AUTH_SUCC:
-            common.message(">>>>>>>登录成功","INFO")
+            #common.message(">>>>>>>登录成功","INFO")
+            #print(">>>>>>>登录成功")
             return True
         elif auth_status == code.AUTH_USER_ERROR:
-            common.message(">>>>>>>用户名不存在","ERROR")
+            #common.message(">>>>>>>用户名不存在","ERROR")
             return False
         else:
-            common.message(">>>>>>>用户名或密码错误！","ERROR")
+            #common.message(">>>>>>>用户名或密码错误！","ERROR")
             return False
 
     def mk(self,command):
@@ -102,10 +108,13 @@ class client(object):
         :param command: delete|PycharmProjects/untitled/project/FTPv1/FTPServer/upload/admin/test/aa
         :return:
         """
+        print(command)
         # 发送命令消息给服务端
         self.client.sendall(bytes(command, encoding='utf-8'))
         # 接收服务端发来的回应消息
         del_msg = str(self.client.recv(1024), encoding='utf-8')
+        print(5555)
+        print(del_msg)
         reve_status = int(del_msg.split("|")[0])
         reve_delfilename_fsize = int(del_msg.split("|")[1])
 
@@ -149,14 +158,11 @@ class client(object):
         :param args:
         :return: 返回文件列表
         """
-        print(11111111111)
         try:
             # 发送命令到服务端
             self.client.send(bytes("ls|", encoding='utf-8'))
             # 接收服务端发送结果的大小
-            print(22222222)
             total_data_len = self.client.recv(1024).decode()
-            print(33333333)
             # 收到了并发送一个ready标识给服务端
             self.client.send(bytes("ready", 'utf-8'))
 
@@ -201,9 +207,9 @@ class client(object):
                                                                   filesize=fsize,
                                                                   filemd5=fmd5,
                                                                   file_target_path=target_path)
-            print(file_msg)
+            #print(file_msg)
             self.client.send(bytes(file_msg, encoding='utf8'))
-            print("send file info: {0}".format(file_msg))
+            #print("send file info: {0}".format(file_msg))
             #接收来自服务端数据
             put_msg = str(self.client.recv(1024),encoding='utf-8')
             try:
@@ -211,22 +217,29 @@ class client(object):
                 if put_msg == "ok":
                     #判断是否超过用户空间配额
                     if self.userspace + fsize > self.totalspace:
-                        common.message("用户磁盘空间不足,无法上传文件,请联系管理员!","ERROR")
+                        #common.message("用户磁盘空间不足,无法上传文件,请联系管理员!","ERROR")
+                        print("用户磁盘空间不足,无法上传文件,请联系管理员!")
                     else:
                         self.userspace += fsize
                         new_size = 0
                         with open(file_name,'rb') as f:
+                            last_step = 0
                             for line in f:
                                 self.client.sendall(line)
                                 new_size += len(line)
                                 # 打印上传进度条
-                                common.progress_bar(new_size,fsize)
+                                #print(new_size,fsize)
+                                step = int(new_size/fsize*100)
+                                if step!=last_step:
+                                    self.processbar_step.emit(step)
+                                #common.progress_bar(new_size,fsize)
                                 if new_size >= fsize:
                                     break
                 #断点续传文件
                 if put_msg.split("|")[0] == "continue":
                     send_size = int(put_msg.split("|")[1])
-                    common.message("服务端存在此文件，但未上传完，开始断点续传......(TODO)","INFO")
+                    #common.message("服务端存在此文件，但未上传完，开始断点续传......(TODO)","INFO")
+                    print("服务端存在此文件，但未上传完，开始断点续传......(TODO)")
                     new_size = 0
                     with open(file_name,'rb') as f:
                         #用seek来进行文件指针的偏移，实现断点续传的功能
@@ -236,12 +249,13 @@ class client(object):
                             self.client.sendall(revedata)
                             new_size += len(revedata)
                             #打印上传进度条
-                            common.progress_bar(new_size, fsize)
+                            #common.progress_bar(new_size, fsize)
                         else:
                             revedata = f.read(fsize - send_size)
                             self.client.sendall(revedata)
                             # 打印上传进度条
-                            common.progress_bar(new_size, fsize)
+                            self.processbar_step.emit(int(new_size/fsize*100))
+                            #common.progress_bar(new_size, fsize)
 
                 #不存在断点文件情况，询问是否覆盖掉原文件
                 if put_msg == "full":
@@ -253,47 +267,48 @@ class client(object):
                             self.client.sendall(line)
                             new_size += len(line)
                             #打印上传进度条
-                            common.progress_bar(new_size, fsize)
+                            #common.progress_bar(new_size, fsize)
                             if new_size >= fsize:
                                 break
 
 
-                print("upload file<{0}> successful".format(file_name))
-                common.message("文件上传成功", "INFO")
+                print("上传 <{0}> 成功！".format(os.path.basename(file_name)))
+                #common.message("文件上传成功", "INFO")
                 return True
             except Exception as e:
                 print("文件上传失败:{0}".format(e))
-                common.message("文件上传失败！", "ERROR")
+                #common.message("文件上传失败！", "ERROR")
                 return False
         else:
             common.message("文件不存在！", "ERROR")
             return False
 
     def getFolder(self,command):
-        file_folder = command.split("|")[1]
-        self.client.send(bytes(command, encoding='utf-8'))
+        client_root = command.split("|")[1]
+        datanum = command.split("|")[2]
+        client_folder = os.path.join(client_root,datanum)
+        self.client.send(bytes('getFolder|'+datanum, encoding='utf-8'))
         # 文件存在,开始接收文件基本信息(大小,文件名)
         file_info = self.client.recv(1024).decode().split("|")
         if len(file_info)==0:
             return False
-        print('====',file_info)
+        #print('====',file_info)
         file_num = int(file_info[0])
         file_names = file_info[1].split(",")
         
         if file_num == 0:
             return False
         for file in file_names:
-            file_fullname = os.path.join(file_folder,file)
-            if os.path.exists(file_fullname):
-                print('文件已存在：',file_fullname)
-                continue
-            if '.' not in file: # 文件夹，非文件
+            #print('校验：',client_folder,file)
+            # 跳过已存在的文件、命名非法的文件
+            if os.path.exists(os.path.join(client_folder,file)) or '.' not in file:
+                print("下载 <{0}> ----文件已存在！".format(file))
                 continue
             time.sleep(0.2)
-            print('get|'+file_fullname)
-            self.get('get|'+os.path.join(file_folder,file))
+            #print('get|'+os.path.join(datanum,file))
+            self.get('get|'+os.path.join(datanum,file),client_root)
 
-    def get(self,command):
+    def get(self,command,client_root=''):
         """
         下载文件
         :param command:
@@ -301,7 +316,7 @@ class client(object):
         """
         return_result = ""
         # 发送基本信息到服务端 (command,username,file)
-        print('get:',command)
+        #print('get:',command)
         self.client.send(bytes(command, encoding='utf-8'))
         # 先接收到命令是否正确标识,1 文件存在, 0 文件不存在
         ack_by_server = self.client.recv(1024)
@@ -316,7 +331,7 @@ class client(object):
                 # 文件存在,开始接收文件基本信息(大小,文件名)
                 #file_info = self.client.recv(1024).decode()
                 file_info = self.client.recv(2048).decode().split("|")
-                print('file_info:',file_info)
+                #print('file_info:',file_info)
                 if len(file_info)<3:
                     return False
                 file_size = int(file_info[0])
@@ -329,7 +344,7 @@ class client(object):
 
                 # 3 开始接收数据了
                 has_recv = 0
-                with open(file_name, 'wb') as f:
+                with open(os.path.join(client_root,file_name), 'wb') as f:
                     while True:
                         # 如果文件总大小等于已经接收的文件大小，则退出
                         if file_size == has_recv:
@@ -338,16 +353,19 @@ class client(object):
                         f.write(data)
                         has_recv += len(data)
                         # 打印下载进度条
-                        common.progress_bar(has_recv, file_size)
-                return_result = "\n文件下载成功"
-                print("download file<{0}> from server successful".format(file_name))
+                        self.processbar_step.emit(int(has_recv/file_size*100))
+                        #common.progress_bar(has_recv, file_size)
+                return_result = "下载 <{0}> 成功！".format(file_name)
+                #print("download file<{0}> from server successful".format(file_name))
+                
                 # md5文件验证
-                check_md5 = common.md5sum(os.path.join(settings.DOWNLOAD_FILE_PATH, file_name))
+                check_md5 = common.md5sum(os.path.join(client_root, file_name))
                 if check_md5 == file_md5:
-                    print("md5 check for file<{0}> succ!".format(file_name))
+                   # print("md5 check for file<{0}> succ!".format(file_name))
                     return_result += ", MD5 验证成功! "
                 else:
                     return_result += ", MD5 验证文件不匹配! "
-            common.message(return_result,"INFO")
+            print(return_result)
+            #common.message(return_result,"INFO")
         except Exception as e:
-            print(e)
+            print("ERROR:",e)

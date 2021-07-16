@@ -1,12 +1,13 @@
 {
-    "project_id": "PM20210002",
+    "mode": "client",
+    "user_id": "pathologydept",
+    "password": "345qwe",
     "ip": "3jk9901196.qicp.vip",
     "mysql_username": "root",
-    "mysql_port": 50816,
+    "mysql_port": "50816",
     "mysql_password": "jrk.com",
-    "socket_port": 46364,
+    "socket_port": "46364",
     "database": "test",
-    "table_name": "DepartmentOfPathology ",
     "key_search": [
         "datadescribe",
         "experimentdate",
@@ -25,10 +26,7 @@
         "fov",
         "shootnum",
         "zslice",
-        "matchsize",
-        "test_key_1",
-        "test_key_2",
-        "test_key_3"
+        "matchsize"
     ],
     "key_show": [
         [
@@ -129,18 +127,6 @@
         ],
         [
             "matchsize",
-            "varchar"
-        ],
-        [
-            "test_key_1",
-            "varchar"
-        ],
-        [
-            "test_key_2",
-            "varchar"
-        ],
-        [
-            "test_key_3",
             "varchar"
         ]
     ]

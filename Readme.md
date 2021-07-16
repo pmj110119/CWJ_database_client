@@ -32,8 +32,11 @@
 
 
 
+pathologydept
+345qwe
 
+dermatologicaldept
+123qwe
 
-
-
-
+test
+12345
