@@ -19,3 +19,6 @@ release0714
 * *.json
 *_*.json
 transfer_client2.py
+/Database/
+/files/
+*client.json
