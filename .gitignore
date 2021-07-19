@@ -16,4 +16,6 @@ release0714
 *copy*
 *（*）*
 *.vscode*
+* *.json
+*_*.json
 transfer_client2.py

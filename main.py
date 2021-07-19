@@ -74,6 +74,10 @@ class SocketThread(QThread):
             self.err.emit(True)
        
 
+
+
+
+
 class GUI(QMainWindow):
 
     def __init__(self):
@@ -523,7 +527,8 @@ class GUI(QMainWindow):
                     continue
                 keys.append(column_name + ",")  # name = value
                 values.append('\''+widget.text() + "\',")  # name = value
-            
+        # 保存历史输入
+        gui.save_history()
         # 校验
         if len(keys)<5:
             print('ERROR-- 有效输入的字段数为0，请检查您的输入')
