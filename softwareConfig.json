@@ -1,17 +1,18 @@
 {
-    "mode": "server",
+    "mode": "client",
     "user_id": "test",
     "password": "12345",
-    "ip": "localhost",
+    "ip": "3jk9901196.qicp.vip",
     "mysql_username": "root",
-    "mysql_port": "3306",
-    "mysql_password": "751224",
+    "mysql_port": "50816",
+    "mysql_password": "jrk.com",
     "socket_port": "46364",
     "database": "test",
     "key_search": [
         "datadescribe",
         "experimentdate",
         "dataformat",
+        "datatype",
         "samplehospital",
         "sampleid",
         "sampledescribe",
@@ -66,6 +67,10 @@
         ],
         [
             "dataformat",
+            "varchar"
+        ],
+        [
+            "datatype",
             "varchar"
         ],
         [
